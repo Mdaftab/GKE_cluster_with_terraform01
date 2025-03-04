@@ -84,11 +84,16 @@ module "gke" {
     managed_by  = "terraform"
     created_at  = formatdate("YYYY-MM-DD", timestamp())
     updated_by  = "github-actions"
+    team        = "devops"
   }
 
   # Enable Kubernetes Network Policy
   network_policy {
     enabled = true
     provider = "CALICO"
+  }
+
+  workload_identity_config {
+    workload_pool = "${var.project_id}.svc.id.goog"
   }
 }
