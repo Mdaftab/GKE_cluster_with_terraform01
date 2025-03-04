@@ -87,10 +87,12 @@ module "gke" {
     team        = "devops"
   }
 
-  # Enable Network Policy
-  enable_network_policy = true
+  # Network Policy
+  network_policy          = true
+  network_policy_provider = "CALICO"
 
   # Enable Workload Identity
-  enable_workload_identity = true
-  identity_namespace       = "${var.project_id}.svc.id.goog"
+  workload_identity_config = {
+    workload_pool = "${var.project_id}.svc.id.goog"
+  }
 }
