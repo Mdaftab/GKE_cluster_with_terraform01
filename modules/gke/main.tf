@@ -89,7 +89,7 @@ module "gke" {
 
   # Enable Kubernetes Network Policy
   network_policy {
-    enabled = true
+    enabled  = true
     provider = "CALICO"
   }
 
