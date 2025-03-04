@@ -41,21 +41,49 @@ class InfrastructureDiagramGenerator:
                         
                         # Extract resources
                         if 'resource' in config:
-                            for resource_type, instances in config['resource'].items():
-                                for instance in instances:
-                                    self.terraform_modules[module]['resources'].append(
-                                        f"{resource_type}.{list(instance.keys())[0]}"
-                                    )
+                            if isinstance(config['resource'], dict):
+                                for resource_type, instances in config['resource'].items():
+                                    for instance in instances:
+                                        self.terraform_modules[module]['resources'].append(
+                                            f"{resource_type}.{list(instance.keys())[0]}"
+                                        )
+                            elif isinstance(config['resource'], list):
+                                for resource_item in config['resource']:
+                                    if isinstance(resource_item, dict):
+                                        # Each item should be a dict with a single key being the resource type
+                                        resource_type = list(resource_item.keys())[0]
+                                        instances = resource_item[resource_type]
+                                        if isinstance(instances, list):
+                                            for instance in instances:
+                                                if isinstance(instance, dict):
+                                                    instance_name = list(instance.keys())[0]
+                                                    self.terraform_modules[module]['resources'].append(
+                                                        f"{resource_type}.{instance_name}"
+                                                    )
                         
                         # Extract variables
                         if 'variable' in config:
-                            for var_name, var_config in config['variable'].items():
-                                self.terraform_modules[module]['variables'].append(var_name)
+                            if isinstance(config['variable'], dict):
+                                for var_name, var_config in config['variable'].items():
+                                    self.terraform_modules[module]['variables'].append(var_name)
+                            elif isinstance(config['variable'], list):
+                                for var_item in config['variable']:
+                                    if isinstance(var_item, dict):
+                                        # Each item should be a dict with a single key being the variable name
+                                        var_name = list(var_item.keys())[0]
+                                        self.terraform_modules[module]['variables'].append(var_name)
                         
                         # Extract outputs
                         if 'output' in config:
-                            for output_name in config['output'].keys():
-                                self.terraform_modules[module]['outputs'].append(output_name)
+                            if isinstance(config['output'], dict):
+                                for output_name in config['output'].keys():
+                                    self.terraform_modules[module]['outputs'].append(output_name)
+                            elif isinstance(config['output'], list):
+                                for output_item in config['output']:
+                                    if isinstance(output_item, dict):
+                                        # Each item should be a dict with a single key being the output name
+                                        output_name = list(output_item.keys())[0]
+                                        self.terraform_modules[module]['outputs'].append(output_name)
 
     def analyze_kubernetes_resources(self):
         """Analyze Kubernetes manifest files."""

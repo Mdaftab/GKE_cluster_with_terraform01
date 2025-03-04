@@ -225,3 +225,71 @@ _Note: Diagrams will be automatically generated and inserted here by GitHub Acti
 [hcl-shield]: https://img.shields.io/badge/HCL-38%25-blue
 [shell-shield]: https://img.shields.io/badge/Shell-12%25-green
 [shell-url]: scripts/
+
+<!-- BEGIN AUTO-GENERATED -->
+> ⚠️ This section is automatically generated. Do not modify manually.
+> Last updated: 2025-03-05 00:52:09
+
+## 🏗 Terraform Modules
+
+### vpc
+
+**Variables:**
+- `project_id` (string)
+- `vpc_name` (string)
+- `subnet_name` (string)
+- `region` (string)
+- `subnet_cidr` (string)
+- `pod_cidr` (string)
+- `service_cidr` (string)
+- `master_ipv4_cidr_block` (string)
+
+**Outputs:**
+- `network_name`
+- `subnet_name`
+- `network_id`
+- `subnet_id`
+
+### gke
+
+**Variables:**
+- `project_id` (string)
+- `region` (string)
+- `zone` (string)
+- `network_name` (string)
+- `subnet_name` (string)
+- `master_ipv4_cidr_block` (string)
+- `service_account` (string)
+- `machine_type` (string)
+- `min_node_count` (number)
+- `max_node_count` (number)
+- `initial_node_count` (number)
+- `environment` (string)
+- `cluster_name` (string)
+
+**Outputs:**
+- `cluster_name`
+- `cluster_region`
+- `project_id`
+- `endpoint`
+- `ca_certificate`
+
+## 🚢 Kubernetes Resources
+
+### logging.yaml
+
+- `Namespace/logging`
+- `HelmChart/loki-stack`
+- `ConfigMap/promtail-config`
+
+### deployment.yaml
+
+- `Deployment/demo-app`
+- `Service/demo-app`
+
+### monitoring.yaml
+
+- `Namespace/monitoring`
+- `HelmChart/prometheus-stack`
+- `ServiceMonitor/demo-app`
+

@@ -87,18 +87,43 @@ class ProjectAnalyzer:
             
             for config in configs:
                 if 'resource' in config:
-                    for resource_type, instances in config['resource'].items():
-                        for instance in instances:
-                            resources.append(f"- `{resource_type}.{list(instance.keys())[0]}`")
+                    if isinstance(config['resource'], dict):
+                        for resource_type, instances in config['resource'].items():
+                            for instance in instances:
+                                resources.append(f"- `{resource_type}.{list(instance.keys())[0]}`")
+                    elif isinstance(config['resource'], list):
+                        for resource_item in config['resource']:
+                            if isinstance(resource_item, dict):
+                                resource_type = list(resource_item.keys())[0]
+                                instances = resource_item[resource_type]
+                                if isinstance(instances, list):
+                                    for instance in instances:
+                                        if isinstance(instance, dict):
+                                            instance_name = list(instance.keys())[0]
+                                            resources.append(f"- `{resource_type}.{instance_name}`")
                 
                 if 'variable' in config:
-                    for var_name, var_config in config['variable'].items():
-                        var_type = var_config.get('type', 'any')
-                        variables.append(f"- `{var_name}` ({var_type})")
+                    if isinstance(config['variable'], dict):
+                        for var_name, var_config in config['variable'].items():
+                            var_type = var_config.get('type', 'any')
+                            variables.append(f"- `{var_name}` ({var_type})")
+                    elif isinstance(config['variable'], list):
+                        for var_item in config['variable']:
+                            if isinstance(var_item, dict):
+                                var_name = list(var_item.keys())[0]
+                                var_config = var_item[var_name]
+                                var_type = var_config.get('type', 'any')
+                                variables.append(f"- `{var_name}` ({var_type})")
                 
                 if 'output' in config:
-                    for output_name in config['output'].keys():
-                        outputs.append(f"- `{output_name}`")
+                    if isinstance(config['output'], dict):
+                        for output_name in config['output'].keys():
+                            outputs.append(f"- `{output_name}`")
+                    elif isinstance(config['output'], list):
+                        for output_item in config['output']:
+                            if isinstance(output_item, dict):
+                                output_name = list(output_item.keys())[0]
+                                outputs.append(f"- `{output_name}`")
             
             if resources:
                 doc += "**Resources:**\n" + "\n".join(resources) + "\n\n"
