@@ -34,6 +34,8 @@ jobs:
 
     - name: Install Python dependencies
       run: |
+        python -m venv .venv
+        source .venv/bin/activate
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
@@ -54,8 +56,8 @@ jobs:
 
     - name: Install additional tools
       run: |
-        ./scripts/setup_environment.sh
         source .venv/bin/activate
+        ./scripts/setup_environment.sh
 
     - name: Run project validation
       run: |
