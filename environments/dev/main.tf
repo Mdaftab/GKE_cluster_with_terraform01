@@ -36,14 +36,17 @@ module "gke" {
   source = "../../modules/gke"
 
   project_id             = var.project_id
-  cluster_name           = "${var.project_name}-cluster"
   region                 = var.region
   zone                   = var.zone
   network_name           = module.vpc.network_name
   subnet_name            = module.vpc.subnet_name
-  machine_type           = var.machine_type
-  authorized_ip          = var.authorized_ip
   master_ipv4_cidr_block = var.master_ipv4_cidr_block
+  service_account        = "${var.project_name}-sa@${var.project_id}.iam.gserviceaccount.com"
+  machine_type           = var.machine_type
+  min_node_count         = var.min_node_count
+  max_node_count         = var.max_node_count
+  initial_node_count     = var.initial_node_count
+  environment            = var.environment
 
   depends_on = [module.vpc]
 }

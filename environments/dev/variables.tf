@@ -22,11 +22,6 @@ variable "zone" {
   default     = "us-central1-a"
 }
 
-variable "authorized_ip" {
-  description = "The IP address authorized to access the GKE master"
-  type        = string
-}
-
 variable "subnet_cidr" {
   description = "CIDR range for the subnet"
   type        = string
@@ -54,5 +49,29 @@ variable "master_ipv4_cidr_block" {
 variable "machine_type" {
   description = "Machine type for GKE nodes"
   type        = string
-  default     = "e2-small"
+  default     = "e2-medium"
+}
+
+variable "min_node_count" {
+  description = "Minimum number of nodes in the NodePool"
+  type        = number
+  default     = 1
+}
+
+variable "max_node_count" {
+  description = "Maximum number of nodes in the NodePool"
+  type        = number
+  default     = 3
+}
+
+variable "initial_node_count" {
+  description = "Initial number of nodes in the NodePool"
+  type        = number
+  default     = 1
+}
+
+variable "environment" {
+  description = "The environment this cluster will run in"
+  type        = string
+  default     = "dev"
 }
