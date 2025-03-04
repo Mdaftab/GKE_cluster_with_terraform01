@@ -41,7 +41,7 @@ gcloud services enable \
     cloudresourcemanager.googleapis.com
 success "APIs enabled"
 
-# Create Service Account first
+# Create Service Account
 SA_NAME="github-actions-sa"
 SA_EMAIL="$SA_NAME@$PROJECT_ID.iam.gserviceaccount.com"
 echo "Creating Service Account..."
@@ -57,7 +57,7 @@ gcloud projects add-iam-policy-binding "$PROJECT_ID" \
     --role="roles/editor" || true
 success "Roles granted"
 
-# Create Workload Identity Pool
+# Create Workload Identity Pool if it doesn't exist
 POOL_NAME="github-actions-pool"
 echo "Creating Workload Identity Pool..."
 gcloud iam workload-identity-pools create "$POOL_NAME" \
@@ -66,21 +66,15 @@ gcloud iam workload-identity-pools create "$POOL_NAME" \
     --display-name="GitHub Actions Pool" || true
 success "Workload Identity Pool created/verified"
 
-# Get the Workload Identity Pool ID
-POOL_ID=$(gcloud iam workload-identity-pools describe "$POOL_NAME" \
-    --project="$PROJECT_ID" \
-    --location="global" \
-    --format="value(name)")
-success "Got Pool ID: $POOL_ID"
-
 # Create Workload Identity Provider
+PROVIDER_NAME="github-actions"
 echo "Creating Workload Identity Provider..."
-gcloud iam workload-identity-pools providers create-oidc "$POOL_NAME-provider" \
+gcloud iam workload-identity-pools providers create-oidc "$PROVIDER_NAME" \
     --project="$PROJECT_ID" \
     --location="global" \
     --workload-identity-pool="$POOL_NAME" \
     --display-name="GitHub Actions Provider" \
-    --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository" \
+    --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository,google.groups=assertion.repository" \
     --issuer-uri="https://token.actions.githubusercontent.com" || true
 success "Workload Identity Provider created/verified"
 
@@ -89,11 +83,11 @@ echo "Setting up authentication binding..."
 gcloud iam service-accounts add-iam-policy-binding "$SA_EMAIL" \
     --project="$PROJECT_ID" \
     --role="roles/iam.workloadIdentityUser" \
-    --member="principalSet://iam.googleapis.com/${POOL_ID}/attribute.repository/${GITHUB_REPO}" || true
+    --member="principalSet://iam.googleapis.com/projects/$PROJECT_ID/locations/global/workloadIdentityPools/$POOL_NAME/attribute.repository/${GITHUB_REPO}" || true
 success "Authentication binding created"
 
 # Get the Workload Identity Provider resource name
-WORKLOAD_IDENTITY_PROVIDER="projects/$PROJECT_ID/locations/global/workloadIdentityPools/$POOL_NAME/providers/$POOL_NAME-provider"
+WORKLOAD_IDENTITY_PROVIDER="projects/$PROJECT_ID/locations/global/workloadIdentityPools/$POOL_NAME/providers/$PROVIDER_NAME"
 success "Got Workload Identity Provider: $WORKLOAD_IDENTITY_PROVIDER"
 
 echo -e "\n🎉 Setup Complete!"
