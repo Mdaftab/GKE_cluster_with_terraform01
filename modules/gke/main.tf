@@ -83,5 +83,12 @@ module "gke" {
     environment = var.environment
     managed_by  = "terraform"
     created_at  = formatdate("YYYY-MM-DD", timestamp())
+    updated_by  = "github-actions"
+  }
+
+  # Enable Kubernetes Network Policy
+  network_policy {
+    enabled = true
+    provider = "CALICO"
   }
 }
