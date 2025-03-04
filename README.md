@@ -42,6 +42,43 @@ A minimal, cost-effective Google Kubernetes Engine (GKE) cluster deployment usin
 </tr>
 </table>
 
+## 🔑 Authentication Setup
+
+### Local Development
+1. Install the [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
+2. Authenticate with GCP:
+   ```bash
+   gcloud auth application-default login
+   ```
+3. Set your project ID:
+   ```bash
+   gcloud config set project YOUR_PROJECT_ID
+   ```
+
+### GitHub Actions Authentication
+This project uses Workload Identity Federation for secure authentication between GitHub Actions and Google Cloud Platform. This is the recommended approach as it:
+- Eliminates the need to store long-lived credentials in GitHub
+- Provides automatic key rotation
+- Enables fine-grained access control
+- Follows security best practices
+
+To set up Workload Identity Federation:
+
+1. Set required environment variables:
+   ```bash
+   export PROJECT_ID="your-project-id"
+   export GITHUB_REPO="your-github-username/your-repo-name"
+   ```
+
+2. Run the setup script:
+   ```bash
+   ./scripts/setup_gcp_auth.sh
+   ```
+
+3. Add the generated secrets to your GitHub repository:
+   - `WORKLOAD_IDENTITY_PROVIDER`
+   - `SERVICE_ACCOUNT_EMAIL`
+
 ## 📋 Prerequisites
 
 Before starting, ensure you have:
@@ -118,6 +155,7 @@ terraform apply tfplan
 └── scripts/
     ├── bootstrap.sh        # Initial setup script
     └── setup.sh           # Infrastructure setup script
+    └── setup_gcp_auth.sh  # GCP authentication setup script
 ```
 
 ## ⚙️ Infrastructure Details
@@ -169,6 +207,12 @@ terraform destroy
 ## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Infrastructure Diagrams
+
+The infrastructure diagrams below are automatically generated from our Terraform code and updated on every push to main.
+
+_Note: Diagrams will be automatically generated and inserted here by GitHub Actions_
 
 [made-by-shield]: https://img.shields.io/badge/Made%20by-Mdaftab-blue
 [made-by-url]: https://github.com/Mdaftab

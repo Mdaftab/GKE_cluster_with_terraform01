@@ -1,0 +1,68 @@
+# Terraform Change Management Rules
+
+# Automatic execution rules
+auto_execute:
+  - pattern: "**/*.tf"
+    on_change:
+      - run: "terraform init"
+        continue_on_error: false
+      - run: "terraform fmt"
+        continue_on_error: true
+      - run: "terraform validate"
+        continue_on_error: false
+      - run: "terraform plan -out=tfplan"
+        continue_on_error: false
+        notify: "Terraform plan completed successfully"
+
+  - pattern: "**/*.tfvars"
+    on_change:
+      - run: "terraform fmt"
+      - run: "terraform plan -out=tfplan"
+        notify: "Plan updated with new variables"
+
+# Continuous validation
+watch:
+  - pattern: "**/*.tf"
+    on_change:
+      - run: "terraform validate"
+      - checkpoint: "terraform_change"
+        auto_approve: true
+
+# Error handling
+on_error:
+  - run: "terraform plan -detailed-exitcode"
+    notify: "Plan failed - see detailed error output"
+    retry:
+      max_attempts: 3
+      delay: 30s
+
+# Change tracking
+track_changes:
+  - pattern: "**/*.tf"
+    record:
+      - command: "terraform plan"
+        output: "plans/$(date +%Y%m%d_%H%M%S).tfplan"
+      - command: "terraform apply"
+        output: "logs/apply_$(date +%Y%m%d_%H%M%S).log"
+    history: true
+
+# Safety checks (still maintained but won't block execution)
+prevent:
+  - pattern: "**/*.tf"
+    contains: "force_destroy.*=.*true"
+    warn: true
+    
+  - pattern: "**/*.tf"
+    contains: "terraform.*{.*version.*=.*\"latest\".*}"
+    warn: true
+
+# Workspace management
+workspace:
+  auto_select: true
+  default: "dev"
+
+# State backup
+backup:
+  - before: "terraform apply"
+    state_file: "terraform.tfstate"
+    destination: "backups/state_$(date +%Y%m%d_%H%M%S).backup"

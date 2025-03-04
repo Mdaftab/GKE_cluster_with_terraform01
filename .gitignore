@@ -41,3 +41,76 @@ terraform.rc
 
 # Ignore VS Code settings
 .vscode/
+requirment is when we 
+
+# windsurf rules
+
+# Python virtual environment
+.venv/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform.lock.hcl
+
+# IDE
+.vscode/
+.idea/
+*.iml
+.project
+.settings/
+
+# Misc
+*.log
+*.bak
+.DS_Store
+Thumbs.db
+
+# Generated files
+docs/diagrams/*.png
+*.tfplan
+plans/
+logs/
+
+# Sensitive files and credentials
+.env*
+*.env
+credentials.json
+key.json
+account.json
+*-credentials.json
+*-key.json
+*-account.json
+gcp-*.json
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+*.keystore
+*.jks
+kubeconfig
+.kube/
+.config/
+.gcloud/
+.boto
+.aws/
+.azure/
+service-account*.json
+
+# Local development files
+.envrc
+.direnv/
+*.local
+local.*
+.secrets*
+secrets.*
+*_rsa
+*_dsa
+*_ed25519
+*_ecdsa
+*.pub

@@ -5,18 +5,18 @@ module "gke" {
   source  = "terraform-google-modules/kubernetes-engine/google//modules/private-cluster"
   version = "~> 29.0"
 
-  project_id                 = var.project_id
-  name                      = var.cluster_name
-  region                    = var.region
-  zones                     = [var.zone]
-  network                   = var.network_name
-  subnetwork               = var.subnet_name
-  ip_range_pods            = "${var.subnet_name}-pods"
-  ip_range_services        = "${var.subnet_name}-services"
-  master_ipv4_cidr_block   = var.master_ipv4_cidr_block
-  enable_private_endpoint  = false
-  enable_private_nodes     = true
-  deletion_protection      = false
+  project_id              = var.project_id
+  name                    = var.cluster_name
+  region                  = var.region
+  zones                   = [var.zone]
+  network                 = var.network_name
+  subnetwork              = var.subnet_name
+  ip_range_pods           = "${var.subnet_name}-pods"
+  ip_range_services       = "${var.subnet_name}-services"
+  master_ipv4_cidr_block  = var.master_ipv4_cidr_block
+  enable_private_endpoint = false
+  enable_private_nodes    = true
+  deletion_protection     = false
   master_authorized_networks = [{
     cidr_block   = "${var.authorized_ip}/32"
     display_name = "VPN"
@@ -29,15 +29,15 @@ module "gke" {
     {
       name               = "small-pool"
       machine_type       = "e2-micro"
-      min_count         = 1
-      max_count         = 2
-      local_ssd_count   = 0
-      disk_size_gb      = 10
-      disk_type         = "pd-standard"
-      image_type        = "COS_CONTAINERD"
-      auto_repair       = true
-      auto_upgrade      = true
-      spot              = true
+      min_count          = 1
+      max_count          = 2
+      local_ssd_count    = 0
+      disk_size_gb       = 10
+      disk_type          = "pd-standard"
+      image_type         = "COS_CONTAINERD"
+      auto_repair        = true
+      auto_upgrade       = true
+      spot               = true
       initial_node_count = 1
     }
   ]
@@ -67,13 +67,13 @@ module "gke" {
   }
 
   # Security
-  enable_shielded_nodes = true
+  enable_shielded_nodes         = true
   monitoring_enabled_components = ["SYSTEM_COMPONENTS"]
-  logging_enabled_components   = ["SYSTEM_COMPONENTS"]
+  logging_enabled_components    = ["SYSTEM_COMPONENTS"]
 
   # Minimal monitoring for cost savings
-  monitoring_service    = "monitoring.googleapis.com/kubernetes"
-  logging_service      = "logging.googleapis.com/kubernetes"
+  monitoring_service = "monitoring.googleapis.com/kubernetes"
+  logging_service    = "logging.googleapis.com/kubernetes"
 
   # RBAC
   grant_registry_access = true
