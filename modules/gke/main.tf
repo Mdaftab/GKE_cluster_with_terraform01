@@ -92,7 +92,5 @@ module "gke" {
   network_policy_provider = "CALICO"
 
   # Enable Workload Identity
-  workload_identity_config = {
-    workload_pool = "${var.project_id}.svc.id.goog"
-  }
+  node_metadata = "GKE_METADATA"
 }
