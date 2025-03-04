@@ -11,7 +11,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
-  id-token: write # Required for GCP Workload Identity Federation
+  id-token: write
 
 env:
   TF_WORKSPACE: "dev"
@@ -48,8 +48,7 @@ jobs:
       id: auth
       uses: google-github-actions/auth@v2
       with:
-        workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
-        service_account: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
 
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2

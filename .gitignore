@@ -79,10 +79,8 @@ logs/
 .env*
 *.env
 credentials.json
-key.json
 account.json
 *-credentials.json
-*-key.json
 *-account.json
 gcp-*.json
 *.pem
@@ -101,6 +99,11 @@ kubeconfig
 .aws/
 .azure/
 service-account*.json
+
+# GCP service account keys
+key.json
+*-key.json
+gcp-*.json
 
 # Local development files
 .envrc
