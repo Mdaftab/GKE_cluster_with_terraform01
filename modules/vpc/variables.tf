@@ -43,8 +43,3 @@ variable "master_ipv4_cidr_block" {
   type        = string
   default     = "172.16.0.0/28"
 }
-
-variable "authorized_ip" {
-  description = "The IP address authorized to access the GKE master"
-  type        = string
-}

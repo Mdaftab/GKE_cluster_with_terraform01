@@ -62,20 +62,6 @@ resource "google_compute_firewall" "gke_internal" {
   ]
 }
 
-# Firewall rule to allow local machine access to GKE master
-resource "google_compute_firewall" "gke_master_access" {
-  name    = "${var.vpc_name}-gke-master"
-  network = module.vpc.network_name
-
-  allow {
-    protocol = "tcp"
-    ports    = ["443", "10250"] # Allow HTTPS and Kubelet port
-  }
-
-  source_ranges = ["${var.authorized_ip}/32"]
-  target_tags   = ["gke-${var.vpc_name}"]
-}
-
 # NAT configuration for private GKE nodes
 resource "google_compute_router" "router" {
   name    = "${var.vpc_name}-router"
