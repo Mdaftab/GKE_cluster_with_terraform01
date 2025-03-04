@@ -10,10 +10,10 @@ module "gke" {
   region                  = var.region
   zones                   = [var.zone]
   network                 = var.network_name
-  subnetwork              = var.subnet_name
-  ip_range_pods           = "${var.subnet_name}-pods"
-  ip_range_services       = "${var.subnet_name}-services"
-  master_ipv4_cidr_block  = var.master_ipv4_cidr_block
+  subnetwork             = var.subnet_name
+  ip_range_pods          = "${var.subnet_name}-pods"
+  ip_range_services      = "${var.subnet_name}-services"
+  master_ipv4_cidr_block = var.master_ipv4_cidr_block
   enable_private_endpoint = false
   enable_private_nodes    = true
   deletion_protection     = false
@@ -67,9 +67,9 @@ module "gke" {
   }
 
   # Security
-  enable_shielded_nodes         = true
-  monitoring_enabled_components = ["SYSTEM_COMPONENTS"]
-  logging_enabled_components    = ["SYSTEM_COMPONENTS"]
+  enable_shielded_nodes = true
+  monitoring_enable_managed_prometheus = true
+  logging_enabled_components          = ["SYSTEM_COMPONENTS"]
 
   # Minimal monitoring for cost savings
   monitoring_service = "monitoring.googleapis.com/kubernetes"
@@ -78,8 +78,8 @@ module "gke" {
   # RBAC
   grant_registry_access = true
 
-  # Add resource labels for better tracking
-  resource_labels = {
+  # Add labels for better tracking
+  cluster_resource_labels = {
     environment = var.environment
     managed_by  = "terraform"
     created_at  = formatdate("YYYY-MM-DD", timestamp())
@@ -87,13 +87,10 @@ module "gke" {
     team        = "devops"
   }
 
-  # Enable Kubernetes Network Policy
-  network_policy {
-    enabled  = true
-    provider = "CALICO"
-  }
+  # Enable Network Policy
+  enable_network_policy = true
 
-  workload_identity_config {
-    workload_pool = "${var.project_id}.svc.id.goog"
-  }
+  # Enable Workload Identity
+  enable_workload_identity = true
+  identity_namespace      = "${var.project_id}.svc.id.goog"
 }
