@@ -35,6 +35,7 @@ module "gke" {
   source = "../../modules/gke"
 
   project_id             = var.project_id
+  cluster_name           = "${var.project_name}-cluster"
   region                 = var.region
   zone                   = var.zone
   network_name           = module.vpc.network_name

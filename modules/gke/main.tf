@@ -17,10 +17,6 @@ module "gke" {
   enable_private_endpoint = false
   enable_private_nodes    = true
   deletion_protection     = false
-  master_authorized_networks = [{
-    cidr_block   = "${var.authorized_ip}/32"
-    display_name = "VPN"
-  }]
 
   remove_default_node_pool = true
   initial_node_count       = 1
