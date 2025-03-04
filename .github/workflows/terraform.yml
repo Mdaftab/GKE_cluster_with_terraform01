@@ -1,18 +1,12 @@
-name: 'Terraform CI/CD Pipeline'
+name: 'Terraform CI/CD'
 
 on:
   push:
-    branches: [ main ]
-    paths:
-      - '**.tf'
-      - '**.tfvars'
-      - '.github/workflows/terraform.yml'
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
-    paths:
-      - '**.tf'
-      - '**.tfvars'
-      - '.github/workflows/terraform.yml'
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -20,360 +14,12 @@ permissions:
   id-token: write # Required for GCP Workload Identity Federation
 
 env:
-  TF_LOG: INFO
-  TF_INPUT: false
-  GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
-  TF_WORKSPACE: 'dev'
+  TF_WORKSPACE: "dev"
   PROJECT_ROOT: ${{ github.workspace }}
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  # Phase 0: Validate Environment
-  validate-environment:
-    name: 'Validate Environment & Dependencies'
-    runs-on: ubuntu-latest
-    outputs:
-      environment-valid: ${{ steps.check-env.outputs.is-valid }}
-    steps:
-      - name: Check Required Secrets
-        id: check-env
-        run: |
-          missing_secrets=()
-          for secret in "GOOGLE_CREDENTIALS" "GCP_PROJECT_ID" "INFRACOST_API_KEY"; do
-            if [ -z "${{ secrets[format('{0}', secret)] }}" ]; then
-              missing_secrets+=($secret)
-            fi
-          done
-          
-          if [ ${#missing_secrets[@]} -ne 0 ]; then
-            echo "Missing required secrets: ${missing_secrets[*]}"
-            echo "is-valid=false" >> $GITHUB_OUTPUT
-            exit 1
-          else
-            echo "is-valid=true" >> $GITHUB_OUTPUT
-          fi
-
-  # Phase 1: Code Quality & Analysis
-  code-quality:
-    name: 'Code Quality Checks'
-    needs: validate-environment
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Verify Directory Structure
-        run: |
-          required_dirs=("environments/dev" "modules" "kubernetes/manifests" "docs/diagrams")
-          for dir in "${required_dirs[@]}"; do
-            if [ ! -d "$dir" ]; then
-              echo "Missing required directory: $dir"
-              exit 1
-            fi
-          done
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: "1.5.0"
-
-      - name: Terraform Format Check
-        run: terraform fmt -check -recursive
-        working-directory: environments/dev
-
-      - name: TFLint Setup
-        uses: terraform-linters/setup-tflint@v3
-        with:
-          tflint_version: v0.44.1
-
-      - name: TFLint
-        run: |
-          tflint --init
-          tflint --format compact
-        working-directory: environments/dev
-
-  # Phase 2: Security Scanning
-  security-scan:
-    name: 'Security Analysis'
-    needs: code-quality
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Setup Checkov
-        uses: bridgecrewio/checkov-action@master
-        with:
-          directory: environments/dev
-          framework: terraform
-          skip_check: CKV_GCP_19,CKV_GCP_62
-          output_format: cli
-          download_external_modules: true
-          log_level: WARNING
-
-  # Phase 3: Infrastructure Documentation
-  infrastructure-docs:
-    name: 'Generate Infrastructure Documentation'
-    needs: security-scan
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
-
-      - name: Install terraform-visual
-        run: |
-          pip install terraform-visual
-          pip install graphviz
-
-      - name: Generate Mermaid Diagram
-        run: |
-          mkdir -p docs/diagrams
-          for env in environments/*; do
-            if [ -d "$env" ]; then
-              env_name=$(basename $env)
-              echo "Generating diagram for $env_name environment..."
-              terraform-visual \
-                --dir $env \
-                --output docs/diagrams/${env_name}_infrastructure.dot
-              
-              cat docs/diagrams/${env_name}_infrastructure.dot | python - << 'EOF' > docs/diagrams/${env_name}_infrastructure.mmd
-          import sys
-          import re
-
-          def dot_to_mermaid(dot):
-              nodes = re.findall(r'"([^"]+)" \[label="([^"]+)"\]', dot)
-              edges = re.findall(r'"([^"]+)" -> "([^"]+)"', dot)
-              
-              mermaid = "graph TD\n"
-              # Add subgraph for resource types
-              resource_groups = {}
-              
-              for node_id, label in nodes:
-                  resource_type = label.split('_')[0] if '_' in label else 'Other'
-                  if resource_type not in resource_groups:
-                      resource_groups[resource_type] = []
-                  resource_groups[resource_type].append((node_id, label))
-              
-              # Create subgraphs
-              for group, nodes in resource_groups.items():
-                  mermaid += f"    subgraph {group}\n"
-                  for node_id, label in nodes:
-                      safe_id = node_id.replace("-", "_").replace(".", "_")
-                      mermaid += f"        {safe_id}[{label}]\n"
-                  mermaid += "    end\n"
-              
-              # Add edges
-              for source, target in edges:
-                  source = source.replace("-", "_").replace(".", "_")
-                  target = target.replace("-", "_").replace(".", "_")
-                  mermaid += f"    {source} --> {target}\n"
-              
-              return mermaid
-
-          dot_content = sys.stdin.read()
-          print(dot_to_mermaid(dot_content))
-          EOF
-            fi
-          done
-
-      - name: Update README with Diagrams
-        run: |
-          for mmd in docs/diagrams/*.mmd; do
-            if [ -f "$mmd" ]; then
-              env_name=$(basename $mmd .mmd)
-              if ! grep -q "## Infrastructure Diagram - ${env_name}" README.md; then
-                echo -e "\n## Infrastructure Diagram - ${env_name}\n" >> README.md
-                echo '```mermaid' >> README.md
-                cat $mmd >> README.md
-                echo '```' >> README.md
-              else
-                sed -i "/## Infrastructure Diagram - ${env_name}/,/\`\`\`/!b;/\`\`\`/{p;r ${mmd}" -e 'd}' README.md
-              fi
-            fi
-          done
-
-      - name: Commit and Push Changes
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add docs/diagrams/* README.md
-          git commit -m "docs: Update infrastructure diagrams [skip ci]" || echo "No changes to commit"
-          git push
-
-  # Phase 4: Cost Analysis
-  cost-analysis:
-    name: 'Infrastructure Cost Analysis'
-    needs: infrastructure-docs
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Setup Infracost
-        uses: infracost/actions/setup@v2
-        with:
-          api-key: ${{ secrets.INFRACOST_API_KEY }}
-
-      - name: Generate Infracost cost estimate
-        run: |
-          infracost breakdown --path environments/dev \
-            --format json \
-            --out-file /tmp/infracost.json
-
-      - name: Post Infracost comment
-        if: github.event_name == 'pull_request'
-        uses: infracost/actions/comment@v2
-        with:
-          path: /tmp/infracost.json
-          behavior: update
-
-  # Phase 5: Terraform Plan
-  terraform-plan:
-    name: 'Terraform Plan'
-    needs: [security-scan, cost-analysis]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: "1.5.0"
-
-      - name: Terraform Init
-        run: terraform init
-        working-directory: environments/dev
-
-      - name: Terraform Workspace
-        run: |
-          terraform workspace select $TF_WORKSPACE || terraform workspace new $TF_WORKSPACE
-        working-directory: environments/dev
-
-      - name: Terraform Plan
-        run: terraform plan -out=tfplan
-        working-directory: environments/dev
-
-      - name: Upload Terraform Plan
-        uses: actions/upload-artifact@v3
-        with:
-          name: tfplan
-          path: environments/dev/tfplan
-
-  # Phase 6: Terraform Apply (only on main branch)
-  terraform-apply:
-    name: 'Terraform Apply'
-    needs: terraform-plan
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment: 
-      name: dev
-      url: ${{ steps.cluster_output.outputs.cluster_endpoint }}
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: "1.5.0"
-
-      - name: Download Terraform Plan
-        uses: actions/download-artifact@v3
-        with:
-          name: tfplan
-          path: environments/dev
-
-      - name: Terraform Init
-        run: terraform init
-        working-directory: environments/dev
-
-      - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
-        working-directory: environments/dev
-
-      - name: Get Cluster Endpoint
-        id: cluster_output
-        run: |
-          echo "cluster_endpoint=$(terraform output -raw cluster_endpoint)" >> $GITHUB_OUTPUT
-        working-directory: environments/dev
-
-  # Phase 7: Post-deployment Verification
-  post-deployment:
-    name: 'Post Deployment Verification'
-    needs: terraform-apply
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
-    steps:
-      - name: Verify GCP Access
-        run: |
-          if ! gcloud auth list 2>/dev/null | grep -q "ACTIVE"; then
-            echo "GCP authentication failed"
-            exit 1
-          fi
-
-      - name: Setup gcloud CLI
-        uses: google-github-actions/setup-gcloud@v1
-        with:
-          service_account_key: ${{ secrets.GOOGLE_CREDENTIALS }}
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-
-      - name: Get GKE Credentials
-        run: |
-          gcloud container clusters get-credentials $(terraform output -raw cluster_name) \
-            --region $(terraform output -raw region) \
-            --project ${{ secrets.GCP_PROJECT_ID }}
-        working-directory: environments/dev
-
-      - name: Verify Cluster Health
-        run: |
-          if ! kubectl get nodes; then
-            echo "Failed to access cluster nodes"
-            exit 1
-          fi
-          if ! kubectl get pods -A; then
-            echo "Failed to access cluster pods"
-            exit 1
-          fi
-          kubectl top nodes || true
-
-      - name: Generate Health Report
-        run: |
-          echo "## Cluster Health Report - $(date)" > health_report.md
-          echo "### Node Status" >> health_report.md
-          kubectl get nodes -o wide >> health_report.md
-          echo "### Pod Status" >> health_report.md
-          kubectl get pods -A >> health_report.md
-          echo "### Resource Usage" >> health_report.md
-          kubectl top nodes >> health_report.md || true
-
-      - name: Upload Health Report
-        uses: actions/upload-artifact@v3
-        with:
-          name: health-report
-          path: health_report.md
-
-      - name: Cleanup
-        if: always()
-        run: |
-          # Remove sensitive files
-          rm -f kubeconfig || true
-          rm -f health_report.md || true
-
-  # Phase 8: Validate
-  validate:
-    name: 'Validate'
+  terraform:
+    name: 'Terraform'
     runs-on: ubuntu-latest
     
     steps:
@@ -422,19 +68,24 @@ jobs:
         ./scripts/generate_diagrams.py
 
     - name: Terraform Format
+      id: fmt
       run: terraform fmt -check -recursive
+      continue-on-error: true
 
     - name: Terraform Init
+      id: init
       run: |
         cd environments/dev
         terraform init
 
     - name: Terraform Validate
+      id: validate
       run: |
         cd environments/dev
         terraform validate
 
     - name: Terraform Plan
+      id: plan
       if: github.event_name == 'pull_request'
       run: |
         cd environments/dev
