@@ -77,4 +77,11 @@ module "gke" {
 
   # RBAC
   grant_registry_access = true
+
+  # Add resource labels for better tracking
+  resource_labels = {
+    environment = var.environment
+    managed_by  = "terraform"
+    created_at  = formatdate("YYYY-MM-DD", timestamp())
+  }
 }
