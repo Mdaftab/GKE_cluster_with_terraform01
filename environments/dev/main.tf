@@ -28,7 +28,6 @@ module "vpc" {
   pod_cidr               = var.pod_cidr
   service_cidr           = var.service_cidr
   master_ipv4_cidr_block = var.master_ipv4_cidr_block
-  authorized_ip          = var.authorized_ip
 }
 
 # Create GKE cluster using our module
