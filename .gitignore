@@ -44,6 +44,7 @@ terraform.rc
 requirment is when we 
 
 # windsurf rules
+.windsurfrules
 
 # Python virtual environment
 .venv/
