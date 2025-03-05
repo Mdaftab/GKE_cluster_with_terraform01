@@ -31,11 +31,7 @@ get_input() {
     echo "${value:-$default}"
 }
 
-# Check if gcloud is authenticated
-if ! gcloud auth list --filter=status:ACTIVE --format="get(account)" 2>/dev/null | grep -q "@"; then
-    print_error "You are not authenticated with Google Cloud. Please run bootstrap.sh first."
-    exit 1
-fi
+echo "🚀 Setting up GCP and Terraform configuration..."
 
 # Get project ID from gcloud config
 PROJECT_ID=$(gcloud config get-value project 2>/dev/null)
@@ -60,8 +56,12 @@ print_status "Using project: $PROJECT_ID"
 print_status "Enabling required APIs..."
 APIS="compute.googleapis.com container.googleapis.com cloudresourcemanager.googleapis.com iam.googleapis.com"
 for api in $APIS; do
-    gcloud services enable "$api"
-    print_status "Enabled $api"
+    if ! gcloud services list --enabled --filter="name:$api" --format="get(name)" | grep -q "$api"; then
+        gcloud services enable "$api"
+        print_status "Enabled $api"
+    else
+        print_warning "$api already enabled"
+    fi
 done
 
 # Create GCS bucket for Terraform state
@@ -69,7 +69,25 @@ BUCKET_NAME="${PROJECT_ID}-terraform-state"
 if ! gsutil ls "gs://${BUCKET_NAME}" >/dev/null 2>&1; then
     print_status "Creating GCS bucket for Terraform state..."
     if gsutil mb -l us-central1 "gs://${BUCKET_NAME}"; then
-        print_status "Created bucket: ${BUCKET_NAME}"
+        # Enable versioning
+        gsutil versioning set on "gs://${BUCKET_NAME}"
+        # Set lifecycle policy
+        cat > /tmp/lifecycle.json << EOL
+{
+  "rule": [
+    {
+      "action": {"type": "Delete"},
+      "condition": {
+        "numNewerVersions": 10,
+        "isLive": false
+      }
+    }
+  ]
+}
+EOL
+        gsutil lifecycle set /tmp/lifecycle.json "gs://${BUCKET_NAME}"
+        rm /tmp/lifecycle.json
+        print_status "Created and configured bucket: ${BUCKET_NAME}"
     else
         print_error "Failed to create bucket"
         exit 1
@@ -81,7 +99,7 @@ fi
 # Get current IP address for authorized networks
 CURRENT_IP=$(curl -s ifconfig.me)
 if [ -z "$CURRENT_IP" ]; then
-    print_error "Could not determine your IP address."
+    print_error "Could not determine your IP address"
     exit 1
 fi
 
@@ -93,7 +111,13 @@ cd "$(dirname "$0")/../environments/dev"
 # Create backend.tf from example
 if [ ! -f backend.tf ]; then
     print_status "Creating backend.tf..."
-    sed "s/YOUR_BUCKET_NAME/${BUCKET_NAME}/g" backend.tf.example > backend.tf
+    if [ -f backend.tf.example ]; then
+        sed "s/YOUR_BUCKET_NAME/${BUCKET_NAME}/g" backend.tf.example > backend.tf
+        print_status "Created backend.tf"
+    else
+        print_error "backend.tf.example not found"
+        exit 1
+    fi
 else
     print_warning "backend.tf already exists, skipping..."
 fi
@@ -101,10 +125,16 @@ fi
 # Create terraform.tfvars from example
 if [ ! -f terraform.tfvars ]; then
     print_status "Creating terraform.tfvars..."
-    sed -e "s/your-project-id/$PROJECT_ID/g" \
-        -e "s/your-project-name/$PROJECT_ID/g" \
-        -e "s/YOUR_IP_ADDRESS/$CURRENT_IP/g" \
-        terraform.tfvars.example > terraform.tfvars
+    if [ -f terraform.tfvars.example ]; then
+        sed -e "s/your-project-id/$PROJECT_ID/g" \
+            -e "s/your-project-name/$PROJECT_ID/g" \
+            -e "s/YOUR_IP_ADDRESS/$CURRENT_IP/g" \
+            terraform.tfvars.example > terraform.tfvars
+        print_status "Created terraform.tfvars"
+    else
+        print_error "terraform.tfvars.example not found"
+        exit 1
+    fi
 else
     print_warning "terraform.tfvars already exists, skipping..."
 fi
@@ -119,7 +149,7 @@ terraform plan -out=tfplan
 
 cat << EOF
 
-${GREEN}=== Setup Complete ===${NC}
+🎉 Setup Complete!
 
 ${YELLOW}Configuration Summary:${NC}
 - Project ID: ${PROJECT_ID}
@@ -129,8 +159,12 @@ ${YELLOW}Configuration Summary:${NC}
 - Configuration Files: Created and configured
 
 ${YELLOW}Next Steps:${NC}
-To deploy the infrastructure, run:
-${GREEN}cd environments/dev
-terraform apply tfplan${NC}
+1. Review the Terraform plan output above
+2. To deploy the infrastructure, run:
+   ${GREEN}cd environments/dev
+   terraform apply tfplan${NC}
+3. After deployment, run:
+   ${GREEN}./scripts/connect.sh${NC} to configure kubectl
 
+For more information, see the README.md file.
 EOF

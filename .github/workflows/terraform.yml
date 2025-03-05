@@ -19,7 +19,7 @@ env:
 
 jobs:
   terraform:
-    name: 'Terraform'
+    name: 'Terraform Plan'
     runs-on: ubuntu-latest
     
     steps:
@@ -87,7 +87,6 @@ jobs:
 
     - name: Terraform Plan
       id: plan
-      if: github.event_name == 'pull_request'
       run: |
         cd environments/dev
         terraform plan -no-color -out=tfplan
@@ -112,8 +111,41 @@ jobs:
             body: output
           })
 
+  terraform_apply:
+    name: 'Terraform Apply'
+    needs: terraform
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: production
+      url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      protection_rules:
+        - required_reviewers
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: "1.7.0"
+
+    - name: Authenticate to Google Cloud
+      id: auth
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Terraform Init
+      run: |
+        cd environments/dev
+        terraform init
+
     - name: Terraform Apply
-      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
       run: |
         cd environments/dev
         terraform apply -auto-approve

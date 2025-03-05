@@ -42,6 +42,32 @@ A minimal, cost-effective Google Kubernetes Engine (GKE) cluster deployment usin
 </tr>
 </table>
 
+## 📝 Recent Updates
+
+### March 2025
+1. **Infrastructure Improvements**
+   - Updated GKE module configuration
+   - Removed authorized_ip references
+   - Added cluster_name variable
+   - Optimized node pool settings
+
+2. **Security Enhancements**
+   - Implemented Workload Identity Federation
+   - Added approval requirement for infrastructure changes
+   - Enhanced VPC security configuration
+
+3. **Automation Updates**
+   - Added comprehensive validation workflow
+   - Improved documentation generation
+   - Fixed Python scripts for HCL parsing
+   - Added infrastructure diagrams
+
+4. **Documentation**
+   - Added auto-generated infrastructure diagrams
+   - Updated module documentation
+   - Added security best practices
+   - Enhanced deployment instructions
+
 ## 🔑 Authentication Setup
 
 ### Local Development
@@ -79,66 +105,46 @@ To set up Workload Identity Federation:
    - `WORKLOAD_IDENTITY_PROVIDER`
    - `SERVICE_ACCOUNT_EMAIL`
 
-## 📋 Prerequisites
+## 🔒 Security Notes
 
-Before starting, ensure you have:
-- A Google Cloud Platform account
-- Owner or Editor role on your GCP project
-- Git installed
-- Linux/Unix-based operating system
+1. **Authentication:**
+   - Uses Workload Identity Federation
+   - No service account keys stored in GitHub
+   - Minimal required permissions
+
+2. **Network Security:**
+   - Private cluster deployment
+   - Secure master access configuration
+   - VPC-native networking
+
+3. **Change Management:**
+   - Required approvals for infrastructure changes
+   - Automated security scanning
+   - Comprehensive validation checks
+
+4. **Never Commit:**
+   - Terraform state files (`*.tfstate`)
+   - Variable files (`*.tfvars`)
+   - Backend configuration (`backend.tf`)
+   - Service account keys or credentials
 
 ## 🚀 Deployment Process
 
-The deployment process is split into two automated scripts for better organization and security:
-
-### 1. Bootstrap Script (`bootstrap.sh`)
-
-This script handles all prerequisite installations and authentication:
-
+### 1. Initial Setup
 ```bash
-sudo ./scripts/bootstrap.sh
-```
+# Install dependencies and setup authentication
+./scripts/bootstrap.sh
 
-**What it does:**
-- ✓ Installs required tools:
-  - Terraform
-  - Google Cloud SDK
-  - kubectl
-  - gke-gcloud-auth-plugin
-- ✓ Verifies successful installations
-- ✓ Checks GCP authentication status
-- ✓ Guides through GCP authentication if needed
-
-### 2. Setup Script (`setup.sh`)
-
-This script configures and prepares your infrastructure:
-
-```bash
+# Configure project and enable APIs
 ./scripts/setup.sh
 ```
 
-**What it does:**
-- ✓ Verifies GCP authentication
-- ✓ Sets up GCP project configuration
-- ✓ Enables required GCP APIs:
-  - Compute Engine
-  - Kubernetes Engine
-  - Cloud Resource Manager
-  - IAM
-- ✓ Creates GCS bucket for Terraform state
-- ✓ Configures backend.tf with bucket details
-- ✓ Creates terraform.tfvars with your settings
-- ✓ Initializes Terraform
-- ✓ Generates deployment plan
-
-### 3. Deploy Infrastructure
-
-After the setup is complete, deploy your infrastructure:
-
-```bash
-cd environments/dev
-terraform apply tfplan
-```
+### 2. Infrastructure Deployment
+1. Create a Pull Request with your changes
+2. Wait for automated validation and planning
+3. Get approval from required reviewers
+4. Merge to trigger deployment
+5. Approve the deployment in GitHub environments
 
 ## 🏗️ Project Structure
 
@@ -150,12 +156,14 @@ terraform apply tfplan
 │       ├── main.tf         # Main Terraform configuration
 │       ├── variables.tf     # Variable definitions
 │       └── terraform.tfvars # Variable values
-├── modules/                 # Reusable Terraform modules
-│   └── gke/                # GKE cluster module
-└── scripts/
-    ├── bootstrap.sh        # Initial setup script
-    └── setup.sh           # Infrastructure setup script
-    └── setup_gcp_auth.sh  # GCP authentication setup script
+├── modules/
+│   ├── gke/                # GKE cluster module
+│   └── vpc/                # VPC network module
+├── kubernetes/
+│   └── manifests/          # Kubernetes resource definitions
+├── scripts/                # Automation scripts
+└── docs/
+    └── diagrams/          # Infrastructure diagrams
 ```
 
 ## ⚙️ Infrastructure Details
@@ -173,23 +181,6 @@ terraform apply tfplan
 - Private Cluster: Yes
 - Region: `us-central1`
 - Zone: `us-central1-a`
-
-## 🔒 Security Notes
-
-1. **Authentication:**
-   - Uses application default credentials
-   - No service account keys stored locally
-   - Minimal required permissions
-
-2. **Network Security:**
-   - Private cluster deployment
-   - Authorized networks limited to your IP
-   - Secure master access configuration
-
-3. **Never Commit:**
-   - Terraform state files (`*.tfstate`)
-   - Variable files (`*.tfvars`)
-   - Backend configuration (`backend.tf`)
 
 ## 🔧 Maintenance
 
@@ -292,4 +283,3 @@ _Note: Diagrams will be automatically generated and inserted here by GitHub Acti
 - `Namespace/monitoring`
 - `HelmChart/prometheus-stack`
 - `ServiceMonitor/demo-app`
-
