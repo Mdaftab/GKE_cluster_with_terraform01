@@ -17,11 +17,14 @@ env:
   TF_WORKSPACE: "dev"
   PROJECT_ROOT: ${{ github.workspace }}
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  terraform:
-    name: 'Terraform Plan'
+  install_dependencies:
+    name: 'Install Dependencies'
     runs-on: ubuntu-latest
-    
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -53,8 +56,16 @@ jobs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
 
+  code_quality:
+    name: 'Code Quality Checks'
+    needs: [install_dependencies]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
     - name: Install additional tools
       run: |
+        python -m venv .venv
         source .venv/bin/activate
         ./scripts/setup_environment.sh
 
@@ -66,12 +77,55 @@ jobs:
     - name: Generate documentation
       run: |
         source .venv/bin/activate
-        ./scripts/generate_diagrams.py
+        ./scripts/docs_generator.py
+
+  security_analysis:
+    name: 'Security Analysis'
+    needs: [install_dependencies]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: "1.7.0"
+
+    - name: Run tfsec
+      uses: aquasecurity/tfsec-action@v1.0.0
+      with:
+        working_directory: environments/dev
+
+  terraform_format:
+    name: 'Terraform Format'
+    needs: [install_dependencies]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: "1.7.0"
 
     - name: Terraform Format
       id: fmt
       run: terraform fmt -check -recursive
       continue-on-error: true
+
+  infrastructure_plan:
+    name: 'Infrastructure Plan'
+    needs: [code_quality, security_analysis, terraform_format]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: "1.7.0"
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
 
     - name: Terraform Init
       id: init
@@ -113,22 +167,18 @@ jobs:
 
   terraform_apply:
     name: 'Terraform Apply'
-    needs: terraform
+    needs: [infrastructure_plan]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: production
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
+    - uses: actions/checkout@v4
+    - uses: hashicorp/setup-terraform@v3
       with:
         terraform_version: "1.7.0"
 
     - name: Authenticate to Google Cloud
-      id: auth
       uses: google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GCP_SA_KEY }}
@@ -145,3 +195,16 @@ jobs:
       run: |
         cd environments/dev
         terraform apply -auto-approve
+
+  post_deployment_validation:
+    name: 'Post Deployment Validation'
+    needs: [terraform_apply]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Validate Infrastructure
+      run: |
+        echo "Running post-deployment validation checks..."
+        # Add your validation steps here
