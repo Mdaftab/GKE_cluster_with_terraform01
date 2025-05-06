@@ -1,3 +1,6 @@
+# Sample deployment for testing the GKE cluster
+# This creates a minimal nginx deployment with a LoadBalancer service
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:

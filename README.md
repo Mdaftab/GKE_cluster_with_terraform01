@@ -1,297 +1,326 @@
-# Self-Destructing GKE Cluster Infrastructure
+# Secure GKE Cluster with Terraform
 
-A minimal, cost-effective Google Kubernetes Engine (GKE) cluster deployment using Terraform. This project creates a self-destructing cluster optimized for testing and development purposes.
+A production-ready Google Kubernetes Engine (GKE) cluster deployment using Terraform best practices. This project provides a secure, modular, and cost-effective GKE infrastructure following Google Cloud's recommendations and security hardening guidelines.
 
-## 🎯 Features
+## Overview
 
-<table>
-<tr>
-<td>
+This repository contains Terraform modules to deploy:
+- Private GKE cluster with custom VPC network
+- Comprehensive security controls
+- Cost-optimized configurations
+- Complete infrastructure as code
 
-### 🚀 Infrastructure
-- Private GKE cluster
-- Custom VPC with dedicated subnets
-- Cloud NAT for internet access
-- Spot instances for cost savings
-- Single-zone deployment
+Perfect for:
+- Development and testing environments
+- Learning GKE best practices
+- Starting point for production workloads
+- Understanding Terraform modular design
 
-### 💰 Cost Optimization
-- e2-micro machine type
-- Spot instances
-- Minimal node count (1-2)
-- Auto-destruction capability
+## Features
 
-</td>
-<td>
+### Infrastructure
+- **Private GKE cluster** with custom VPC and dedicated subnets
+- **VPC-native networking** with separate pod and service CIDRs
+- **Cloud NAT** for outbound internet access
+- **Spot instances** for cost efficiency (up to 91% discount)
+- **Complete modularity** for easy customization
 
-### 🔒 Security
-- Private cluster
-- VPC-native networking
-- Shielded nodes
-- Limited OAuth scopes
-- Application default credentials
+### Security
+- **Private cluster** with secure networking
+- **Shielded nodes** with Secure Boot
+- **Workload Identity** for pod-level authentication
+- **Network Policy (Calico)** for pod isolation
+- **Service account** with minimal permissions
+- **NodeLocal DNSCache** for secure/improved DNS
+- **VPC Flow Logs** for network auditing
+- **Application-layer Secrets Encryption** (optional)
 
-### 🤖 Automation
-- Two-step deployment process
-- Automated dependency setup
-- Infrastructure as Code
-- Terraform state management
-- Required APIs auto-enabled
+### Cost Optimization
+- **e2-micro** machine type (smallest available)
+- **Spot instances** for significant cost reduction
+- **Minimal node count** (1-2 nodes)
+- **Single-zone** configuration for development
 
-</td>
-</tr>
-</table>
+### Terraform Best Practices
+- **Modular design** with clean separation of concerns
+- **Remote state** with GCS backend
+- **Clear variable definitions** with documentation
+- **Logical resource organization**
+- **Feature flags** for optional capabilities
+- **Secure defaults** with override capability
 
-## 📝 Recent Updates
+## Prerequisites
 
-### March 2025
-1. **Infrastructure Improvements**
-   - Updated GKE module configuration
-   - Removed authorized_ip references
-   - Added cluster_name variable
-   - Optimized node pool settings
+Before you start, you need:
 
-2. **Security Enhancements**
-   - Implemented Workload Identity Federation
-   - Added approval requirement for infrastructure changes
-   - Enhanced VPC security configuration
+1. **Google Cloud Platform account** with billing enabled
+2. **Local tools** installed:
+   - [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
+   - [Terraform](https://developer.hashicorp.com/terraform/downloads) (v1.0+)
+   - [kubectl](https://kubernetes.io/docs/tasks/tools/)
 
-3. **Automation Updates**
-   - Added comprehensive validation workflow
-   - Improved documentation generation
-   - Fixed Python scripts for HCL parsing
-   - Added infrastructure diagrams
+## Quick Start
 
-4. **Documentation**
-   - Added auto-generated infrastructure diagrams
-   - Updated module documentation
-   - Added security best practices
-   - Enhanced deployment instructions
+### 1. Clone the Repository
 
-## 🔑 Authentication Setup
-
-### Local Development
-1. Install the [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
-2. Authenticate with GCP:
-   ```bash
-   gcloud auth application-default login
-   ```
-3. Set your project ID:
-   ```bash
-   gcloud config set project YOUR_PROJECT_ID
-   ```
-
-### GitHub Actions Authentication
-This project uses Workload Identity Federation for secure authentication between GitHub Actions and Google Cloud Platform. This is the recommended approach as it:
-- Eliminates the need to store long-lived credentials in GitHub
-- Provides automatic key rotation
-- Enables fine-grained access control
-- Follows security best practices
-
-To set up Workload Identity Federation:
-
-1. Set required environment variables:
-   ```bash
-   export PROJECT_ID="your-project-id"
-   export GITHUB_REPO="your-github-username/your-repo-name"
-   ```
-
-2. Run the setup script:
-   ```bash
-   ./scripts/setup_gcp_auth.sh
-   ```
-
-3. Add the generated secrets to your GitHub repository:
-   - `WORKLOAD_IDENTITY_PROVIDER`
-   - `SERVICE_ACCOUNT_EMAIL`
-
-## 🔒 Security Notes
-
-1. **Authentication:**
-   - Uses Workload Identity Federation
-   - No service account keys stored in GitHub
-   - Minimal required permissions
-
-2. **Network Security:**
-   - Private cluster deployment
-   - Secure master access configuration
-   - VPC-native networking
-
-3. **Change Management:**
-   - Required approvals for infrastructure changes
-   - Automated security scanning
-   - Comprehensive validation checks
-
-4. **Never Commit:**
-   - Terraform state files (`*.tfstate`)
-   - Variable files (`*.tfvars`)
-   - Backend configuration (`backend.tf`)
-   - Service account keys or credentials
-
-## 🚀 Deployment Process
-
-### 1. Initial Setup
 ```bash
-# Install dependencies and setup authentication
+git clone https://github.com/yourusername/secure-gke-terraform.git
+cd secure-gke-terraform
+```
+
+### 2. Run the Bootstrap Script
+
+```bash
+chmod +x scripts/bootstrap.sh
 ./scripts/bootstrap.sh
-
-# Configure project and enable APIs
-./scripts/setup.sh
 ```
 
-### 2. Infrastructure Deployment
-1. Create a Pull Request with your changes
-2. Wait for automated validation and planning
-3. Get approval from required reviewers
-4. Merge to trigger deployment
-5. Approve the deployment in GitHub environments
+This script will:
+- Verify required tools
+- Authenticate with Google Cloud
+- Enable necessary APIs
+- Create a GCS bucket for Terraform state
+- Generate backend.tf from the template
+- Generate terraform.tfvars from the template
+- Initialize Terraform
 
-### 3. Self-Destruction Configuration
-This infrastructure includes a self-destruction mechanism to prevent forgotten resources and control costs:
+### 3. Deploy the Infrastructure
 
 ```bash
-# In your terraform.tfvars file:
-auto_destroy_hours = 24  # Cluster will auto-destroy after 24 hours (0 to disable)
-auto_destroy_notification_email = "your-email@example.com"  # Optional email notification
+cd environments/dev
+terraform plan    # Preview changes
+terraform apply   # Deploy the infrastructure
 ```
 
-For complete deployment instructions, see [Deployment Guide](docs/DEPLOYMENT.md).
-For architecture details, see [Architecture Guide](docs/ARCHITECTURE.md).
+### 4. Connect to Your Cluster
 
-## 🏗️ Project Structure
-
-```
-.
-├── environments/
-│   └── dev/                 # Development environment
-│       ├── backend.tf       # Terraform backend configuration
-│       ├── main.tf         # Main Terraform configuration
-│       ├── variables.tf     # Variable definitions
-│       └── terraform.tfvars # Variable values
-├── modules/
-│   ├── gke/                # GKE cluster module
-│   └── vpc/                # VPC network module
-├── kubernetes/
-│   └── manifests/          # Kubernetes resource definitions
-├── scripts/                # Automation scripts
-└── docs/
-    └── diagrams/          # Infrastructure diagrams
+```bash
+chmod +x ../../scripts/connect.sh
+../../scripts/connect.sh
 ```
 
-## ⚙️ Infrastructure Details
+### 5. Test with a Sample Application
 
-### Network Configuration
-- Subnet CIDR: `10.0.0.0/24`
-- Pod CIDR: `10.1.0.0/16`
-- Service CIDR: `10.2.0.0/16`
-- Master CIDR: `172.16.0.0/28`
+```bash
+kubectl apply -f ../../kubernetes/manifests/deployment.yaml
+kubectl get service demo-app  # Get the external IP
+```
 
-### Cluster Configuration
-- Machine Type: `e2-micro`
-- Node Count: 1-2 nodes
-- Node Type: Spot instances
-- Private Cluster: Yes
-- Region: `us-central1`
-- Zone: `us-central1-a`
+### 6. Clean Up When Finished
 
-## 🔧 Maintenance
-
-### Updating Configuration
-1. Edit `terraform.tfvars` for changes
-2. Run `terraform plan` to review
-3. Apply with `terraform apply`
-
-### Destroying Infrastructure
 ```bash
 cd environments/dev
 terraform destroy
 ```
 
-## 📝 License
+## Detailed Architecture
+
+### Modular Structure
+
+The project is organized into the following modules:
+
+1. **VPC Network Module**
+   - Custom VPC with private Google access
+   - Subnet with secondary IP ranges
+   - Firewall rules with least privilege
+   - Cloud NAT for egress traffic
+   - VPC Flow Logs for security monitoring
+
+2. **Security Module**
+   - Custom service account with minimal permissions
+   - Binary Authorization for image validation (optional)
+   - Cloud Armor security policies (optional)
+   - Secret Manager for sensitive configuration (optional)
+
+3. **GKE Cluster Module**
+   - Private cluster with private nodes
+   - Spot instances for cost savings
+   - Shielded nodes with secure boot
+   - Workload Identity for pod authentication
+   - Network Policy (Calico) for pod security
+   - NodeLocal DNSCache for better DNS security
+
+4. **Network Policy Module**
+   - Default deny base policy
+   - Granular allow rules by namespace/label
+   - DNS access for pods
+   - Optional egress restrictions
+
+5. **Monitoring Module**
+   - Custom GKE dashboards
+   - Security-focused alert policies
+   - Log-based security metrics
+   - Optional log export for compliance
+
+### Network Architecture
+
+- **VPC Network**: Dedicated network for the cluster
+- **Primary Subnet**: 10.0.0.0/24 for GKE nodes
+- **Pod CIDR**: 10.1.0.0/16 for Kubernetes pods
+- **Service CIDR**: 10.2.0.0/16 for Kubernetes services
+- **Master CIDR**: 172.16.0.0/28 for GKE control plane
+
+For a detailed visual representation, see the [architecture diagram](docs/architecture.md).
+
+## Directory Structure
+
+```
+.
+├── environments/
+│   └── dev/                 # Development environment
+│       ├── backend.tf.example  # Template for Terraform backend
+│       ├── main.tf         # Main Terraform configuration
+│       ├── outputs.tf      # Output definitions
+│       ├── terraform.tfvars.example # Template for variables
+│       └── variables.tf    # Input variable definitions
+│
+├── kubernetes/
+│   └── manifests/          # Kubernetes manifests
+│       └── deployment.yaml # Sample application
+│
+├── modules/
+│   ├── gke/                # GKE cluster module
+│   │   ├── main.tf         # GKE resource definitions
+│   │   ├── outputs.tf      # Module outputs
+│   │   └── variables.tf    # Module variables
+│   │
+│   ├── monitoring/         # Monitoring and alerting module
+│   │   ├── main.tf         # Monitoring resources
+│   │   ├── outputs.tf      # Module outputs
+│   │   └── variables.tf    # Module variables
+│   │
+│   ├── network-policy/     # Kubernetes NetworkPolicy module
+│   │   ├── main.tf         # NetworkPolicy resources
+│   │   ├── outputs.tf      # Module outputs
+│   │   └── variables.tf    # Module variables
+│   │
+│   ├── security/           # Security module
+│   │   ├── main.tf         # Security resources
+│   │   ├── outputs.tf      # Module outputs
+│   │   └── variables.tf    # Module variables
+│   │
+│   └── vpc/                # VPC network module
+│       ├── main.tf         # VPC resource definitions
+│       ├── outputs.tf      # Module outputs
+│       └── variables.tf    # Module variables
+│
+├── scripts/
+│   ├── bootstrap.sh        # Setup script
+│   └── connect.sh          # Cluster connection script
+│
+└── docs/
+    └── architecture.md     # Architecture documentation
+```
+
+## Configuration Options
+
+Key variables that can be customized in `terraform.tfvars`:
+
+### Project Configuration
+- `project_id` - Your GCP project ID
+- `project_name` - Name used for resource naming
+- `region` - GCP region (default: us-central1)
+- `zone` - GCP zone (default: us-central1-a)
+
+### Network Configuration
+- `subnet_cidr` - Primary subnet CIDR (default: 10.0.0.0/24)
+- `pod_cidr` - Pod IP range (default: 10.1.0.0/16)
+- `service_cidr` - Service IP range (default: 10.2.0.0/16)
+- `master_ipv4_cidr_block` - Master IP range (default: 172.16.0.0/28)
+
+### GKE Configuration
+- `machine_type` - Node VM type (default: e2-micro)
+- `min_node_count` - Minimum nodes (default: 1)
+- `max_node_count` - Maximum nodes (default: 2)
+
+### Security Options
+- `deploy_network_policies` - Enable NetworkPolicies (default: false)
+- `enable_monitoring` - Enable enhanced monitoring (default: true)
+
+## Advanced Usage
+
+### Enabling Network Policies
+
+Set `deploy_network_policies = true` in your terraform.tfvars file to enable Kubernetes NetworkPolicies that restrict pod-to-pod communication.
+
+### Enhanced Monitoring
+
+Keep `enable_monitoring = true` (default) to deploy custom dashboards, alerts, and security metrics.
+
+### Private GKE Master
+
+For additional security, you can restrict access to the GKE API server by setting:
+```
+enable_master_authorized_networks = true
+master_authorized_cidr_blocks = [
+  {
+    cidr_block   = "192.168.1.0/24"
+    display_name = "Corporate Office"
+  }
+]
+```
+
+## Security Considerations
+
+This project implements a multi-layered security approach:
+
+1. **Network Security**
+   - Private GKE cluster with private nodes
+   - VPC-native networking with separate pod/service CIDRs
+   - Firewall rules with least privilege
+   - Default deny with explicit allows
+
+2. **Identity & Access**
+   - Custom service account with minimal permissions
+   - Workload Identity for pod authentication
+   - RBAC for Kubernetes authorization
+
+3. **Node Security**
+   - Shielded nodes with Secure Boot
+   - Node auto-upgrading
+   - Container-Optimized OS
+   - Optional disk encryption
+
+4. **Workload Security**
+   - Network Policy for pod isolation
+   - Optional Binary Authorization
+   - Optional Pod Security Policy
+
+See the [architecture document](docs/architecture.md) for more details.
+
+## Terraform Best Practices
+
+This project demonstrates several Terraform best practices:
+
+1. **Modular Design**
+   - Clean separation of concerns
+   - Reusable modules with well-defined interfaces
+   - Logical resource organization
+
+2. **State Management**
+   - Remote state in GCS bucket
+   - State locking for concurrent operations
+   - State versioning for recovery
+
+3. **Variable Management**
+   - Clear definitions with types
+   - Descriptive documentation
+   - Sensible defaults
+
+4. **Dynamic Configuration**
+   - Feature flags for optional components
+   - Environment-specific configurations
+   - Override capability
+
+5. **Security Hardening**
+   - Secure defaults
+   - Principle of least privilege
+   - Defense in depth
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Infrastructure Diagrams
-
-The infrastructure diagrams below are automatically generated from our Terraform code and updated on every push to main.
-
-_Note: Diagrams will be automatically generated and inserted here by GitHub Actions_
-
-[made-by-shield]: https://img.shields.io/badge/Made%20by-Mdaftab-blue
-[made-by-url]: https://github.com/Mdaftab
-[built-with-terraform]: https://img.shields.io/badge/Built%20with-Terraform-844fba
-[terraform-url]: https://terraform.io
-[built-with-gcp]: https://img.shields.io/badge/Built%20with-GCP-4285f4
-[gcp-url]: https://cloud.google.com
-[license-shield]: https://img.shields.io/badge/License-MIT-green
-[license-url]: LICENSE
-[hcl-shield]: https://img.shields.io/badge/HCL-38%25-blue
-[shell-shield]: https://img.shields.io/badge/Shell-12%25-green
-[shell-url]: scripts/
-
-<!-- BEGIN AUTO-GENERATED -->
-> ⚠️ This section is automatically generated. Do not modify manually.
-> Last updated: 2025-03-05 00:52:09
-
-## 🏗 Terraform Modules
-
-### vpc
-
-**Variables:**
-- `project_id` (string)
-- `vpc_name` (string)
-- `subnet_name` (string)
-- `region` (string)
-- `subnet_cidr` (string)
-- `pod_cidr` (string)
-- `service_cidr` (string)
-- `master_ipv4_cidr_block` (string)
-
-**Outputs:**
-- `network_name`
-- `subnet_name`
-- `network_id`
-- `subnet_id`
-
-### gke
-
-**Variables:**
-- `project_id` (string)
-- `region` (string)
-- `zone` (string)
-- `network_name` (string)
-- `subnet_name` (string)
-- `master_ipv4_cidr_block` (string)
-- `service_account` (string)
-- `machine_type` (string)
-- `min_node_count` (number)
-- `max_node_count` (number)
-- `initial_node_count` (number)
-- `environment` (string)
-- `cluster_name` (string)
-
-**Outputs:**
-- `cluster_name`
-- `cluster_region`
-- `project_id`
-- `endpoint`
-- `ca_certificate`
-
-## 🚢 Kubernetes Resources
-
-### logging.yaml
-
-- `Namespace/logging`
-- `HelmChart/loki-stack`
-- `ConfigMap/promtail-config`
-
-### deployment.yaml
-
-- `Deployment/demo-app`
-- `Service/demo-app`
-
-### monitoring.yaml
-
-- `Namespace/monitoring`
-- `HelmChart/prometheus-stack`
-- `ServiceMonitor/demo-app`

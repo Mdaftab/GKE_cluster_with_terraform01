@@ -1,7 +1,14 @@
 # modules/gke/variables.tf
+#
+# Detailed variables for the GKE module with security-focused options
 
 variable "project_id" {
   description = "The ID of the project in which the resources belong"
+  type        = string
+}
+
+variable "project_name" {
+  description = "The name of the project (used for resource naming)"
   type        = string
 }
 
@@ -65,14 +72,77 @@ variable "cluster_name" {
   type        = string
 }
 
-variable "auto_destroy_hours" {
-  description = "If set, the cluster will be automatically destroyed after this many hours. Set to 0 to disable auto-destruction."
-  type        = number
-  default     = 0
+# Enhanced security features
+
+variable "enable_binary_authorization" {
+  description = "Enable Binary Authorization for the cluster"
+  type        = bool
+  default     = false
 }
 
-variable "auto_destroy_notification_email" {
-  description = "Email to notify before auto-destruction of cluster"
+variable "enable_database_encryption" {
+  description = "Enable application-layer secrets encryption with Cloud KMS"
+  type        = bool
+  default     = false
+}
+
+variable "database_encryption_key" {
+  description = "Cloud KMS key for database encryption"
   type        = string
   default     = ""
+}
+
+variable "enable_boot_disk_encryption" {
+  description = "Enable node boot disk encryption"
+  type        = bool
+  default     = false
+}
+
+variable "boot_disk_kms_key" {
+  description = "Cloud KMS key for boot disk encryption"
+  type        = string
+  default     = ""
+}
+
+variable "enable_dns_cache" {
+  description = "Enable NodeLocal DNSCache"
+  type        = bool
+  default     = true
+}
+
+variable "enable_pod_security_policy" {
+  description = "Enable pod security policy"
+  type        = bool
+  default     = false
+}
+
+variable "enable_master_authorized_networks" {
+  description = "Enable master authorized networks"
+  type        = bool
+  default     = false
+}
+
+variable "master_authorized_cidr_blocks" {
+  description = "List of CIDR blocks authorized to access the master"
+  type        = list(object({
+    cidr_block   = string
+    display_name = string
+  }))
+  default     = []
+}
+
+variable "release_channel" {
+  description = "The release channel for the GKE cluster (UNSPECIFIED, RAPID, REGULAR, STABLE)"
+  type        = string
+  default     = "STABLE"
+}
+
+variable "node_taints" {
+  description = "List of taints to apply to nodes"
+  type        = list(object({
+    key    = string
+    value  = string
+    effect = string
+  }))
+  default     = []
 }

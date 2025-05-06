@@ -49,7 +49,7 @@ variable "master_ipv4_cidr_block" {
 variable "machine_type" {
   description = "Machine type for GKE nodes"
   type        = string
-  default     = "e2-medium"
+  default     = "e2-micro"
 }
 
 variable "min_node_count" {
@@ -76,14 +76,16 @@ variable "environment" {
   default     = "dev"
 }
 
-variable "auto_destroy_hours" {
-  description = "Number of hours after which the cluster will be automatically destroyed. Set to 0 to disable auto-destroy."
-  type        = number
-  default     = 0
+# Additional configuration variables for enhanced modules
+
+variable "deploy_network_policies" {
+  description = "Whether to deploy Kubernetes Network Policies"
+  type        = bool
+  default     = false
 }
 
-variable "auto_destroy_notification_email" {
-  description = "Email to notify before auto-destruction of cluster"
-  type        = string
-  default     = ""
+variable "enable_monitoring" {
+  description = "Whether to enable enhanced monitoring"
+  type        = bool
+  default     = true
 }

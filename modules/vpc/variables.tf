@@ -1,7 +1,14 @@
 # modules/vpc/variables.tf
+#
+# Input variables for the VPC module
 
 variable "project_id" {
   description = "The project ID to host the network in"
+  type        = string
+}
+
+variable "project_name" {
+  description = "The name to use in resource names"
   type        = string
 }
 
@@ -42,4 +49,16 @@ variable "master_ipv4_cidr_block" {
   description = "The CIDR range for GKE master"
   type        = string
   default     = "172.16.0.0/28"
+}
+
+variable "create_default_deny_rule" {
+  description = "Whether to create a default deny-all firewall rule"
+  type        = bool
+  default     = true
+}
+
+variable "enable_flow_logs" {
+  description = "Whether to enable VPC flow logs"
+  type        = bool
+  default     = true
 }

@@ -13,7 +13,10 @@ master_ipv4_cidr_block = "172.16.0.0/28"
 
 # GKE Configuration
 machine_type = "e2-micro"
+min_node_count = 1
+max_node_count = 2
+initial_node_count = 1
 
-# Auto-Destruction Configuration (0 = disabled)
-auto_destroy_hours = 24
-auto_destroy_notification_email = "your-email@example.com"
+# Security and Monitoring Configuration
+deploy_network_policies = false  # Set to true to enable network policies
+enable_monitoring = true        # Set to false to disable monitoring for cost savings
