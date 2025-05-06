@@ -75,13 +75,13 @@ module "gke" {
   grant_registry_access = true
 
   # Add labels for better tracking
-  cluster_resource_labels = {
+  cluster_resource_labels = merge({
     environment = var.environment
     managed_by  = "terraform"
     created_at  = formatdate("YYYY-MM-DD", timestamp())
     updated_by  = "github-actions"
     team        = "devops"
-  }
+  }, local.self_destruct_labels)
 
   # Network Policy
   network_policy          = true

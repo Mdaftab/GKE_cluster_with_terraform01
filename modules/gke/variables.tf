@@ -1,7 +1,7 @@
 # modules/gke/variables.tf
 
 variable "project_id" {
-  description = "The project ID to host the cluster in"
+  description = "The ID of the project in which the resources belong"
   type        = string
 }
 
@@ -11,7 +11,7 @@ variable "region" {
 }
 
 variable "zone" {
-  description = "The zone to host the cluster in"
+  description = "The zone to host the cluster in (required if is a zonal cluster)"
   type        = string
 }
 
@@ -31,41 +31,48 @@ variable "master_ipv4_cidr_block" {
 }
 
 variable "service_account" {
-  description = "The service account to run nodes as"
+  description = "The service account to be used by the node VMs"
   type        = string
 }
 
 variable "machine_type" {
-  description = "The machine type to use for nodes"
+  description = "The machine type to use for node VMs"
   type        = string
-  default     = "e2-medium"
 }
 
 variable "min_node_count" {
   description = "Minimum number of nodes in the NodePool"
   type        = number
-  default     = 1
 }
 
 variable "max_node_count" {
   description = "Maximum number of nodes in the NodePool"
   type        = number
-  default     = 3
 }
 
 variable "initial_node_count" {
   description = "Initial number of nodes in the NodePool"
   type        = number
-  default     = 1
 }
 
 variable "environment" {
   description = "The environment this cluster will run in"
   type        = string
-  default     = "dev"
 }
 
 variable "cluster_name" {
   description = "The name of the cluster"
   type        = string
+}
+
+variable "auto_destroy_hours" {
+  description = "If set, the cluster will be automatically destroyed after this many hours. Set to 0 to disable auto-destruction."
+  type        = number
+  default     = 0
+}
+
+variable "auto_destroy_notification_email" {
+  description = "Email to notify before auto-destruction of cluster"
+  type        = string
+  default     = ""
 }

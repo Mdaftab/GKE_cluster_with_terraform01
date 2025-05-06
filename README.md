@@ -146,6 +146,18 @@ To set up Workload Identity Federation:
 4. Merge to trigger deployment
 5. Approve the deployment in GitHub environments
 
+### 3. Self-Destruction Configuration
+This infrastructure includes a self-destruction mechanism to prevent forgotten resources and control costs:
+
+```bash
+# In your terraform.tfvars file:
+auto_destroy_hours = 24  # Cluster will auto-destroy after 24 hours (0 to disable)
+auto_destroy_notification_email = "your-email@example.com"  # Optional email notification
+```
+
+For complete deployment instructions, see [Deployment Guide](docs/DEPLOYMENT.md).
+For architecture details, see [Architecture Guide](docs/ARCHITECTURE.md).
+
 ## 🏗️ Project Structure
 
 ```

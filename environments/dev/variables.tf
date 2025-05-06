@@ -75,3 +75,15 @@ variable "environment" {
   type        = string
   default     = "dev"
 }
+
+variable "auto_destroy_hours" {
+  description = "Number of hours after which the cluster will be automatically destroyed. Set to 0 to disable auto-destroy."
+  type        = number
+  default     = 0
+}
+
+variable "auto_destroy_notification_email" {
+  description = "Email to notify before auto-destruction of cluster"
+  type        = string
+  default     = ""
+}

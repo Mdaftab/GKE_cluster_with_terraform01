@@ -50,12 +50,26 @@ gcloud iam service-accounts create "$SA_NAME" \
     --display-name="GitHub Actions Service Account" || true
 success "Service Account created/verified"
 
-# Grant necessary roles to the Service Account
+# Grant necessary roles to the Service Account (following principle of least privilege)
 echo "Granting necessary roles..."
-gcloud projects add-iam-policy-binding "$PROJECT_ID" \
-    --member="serviceAccount:$SA_EMAIL" \
-    --role="roles/editor" || true
-success "Roles granted"
+
+# Instead of broad 'editor' role, grant specific roles
+ROLES=(
+    "roles/container.admin"           # For GKE cluster management
+    "roles/compute.networkAdmin"      # For VPC management
+    "roles/iam.serviceAccountUser"    # For using service accounts
+    "roles/storage.admin"             # For GCS bucket access
+    "roles/monitoring.admin"          # For monitoring configuration
+    "roles/cloudscheduler.admin"      # For self-destruct mechanism
+    "roles/pubsub.editor"             # For self-destruct notifications
+)
+
+for ROLE in "${ROLES[@]}"; do
+    gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+        --member="serviceAccount:$SA_EMAIL" \
+        --role="$ROLE" || true
+    success "Role $ROLE granted"
+done
 
 # Create Workload Identity Pool if it doesn't exist
 POOL_NAME="github-actions-pool"

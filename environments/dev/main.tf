@@ -46,7 +46,9 @@ module "gke" {
   min_node_count         = var.min_node_count
   max_node_count         = var.max_node_count
   initial_node_count     = var.initial_node_count
-  environment            = var.environment
+  environment                    = var.environment
+  auto_destroy_hours             = var.auto_destroy_hours
+  auto_destroy_notification_email = var.auto_destroy_notification_email
 
   depends_on = [module.vpc]
 }
