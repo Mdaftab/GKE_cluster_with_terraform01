@@ -160,13 +160,13 @@ done
 # Phase 7: Documentation Check
 echo -e "\n📚 Checking documentation..."
 
-# Run README updater
-if [ -f scripts/update_readme.py ]; then
-    echo "Updating README.md..."
-    python3 scripts/update_readme.py
-    success "README.md updated"
+# Run documentation generator
+if [ -f scripts/docs_generator.py ]; then
+    echo "Updating documentation..."
+    python3 scripts/docs_generator.py
+    success "Documentation updated"
 else
-    warning "README updater script not found"
+    warning "Documentation generator script not found"
 fi
 
 # Check README.md content

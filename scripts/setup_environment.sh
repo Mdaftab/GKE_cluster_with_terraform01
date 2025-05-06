@@ -44,10 +44,16 @@ else
     success "tflint already installed"
 fi
 
-# Initialize pre-commit hooks
+# Initialize pre-commit hooks if not already installed
 echo "Initializing pre-commit hooks..."
-.venv/bin/pre-commit install
-success "pre-commit hooks initialized"
+if pip list | grep -q pre-commit; then
+    .venv/bin/pre-commit install
+    success "pre-commit hooks initialized"
+else
+    pip install pre-commit
+    .venv/bin/pre-commit install
+    success "pre-commit installed and hooks initialized"
+fi
 
 # Make scripts executable
 chmod +x scripts/*.{sh,py}
@@ -56,4 +62,4 @@ success "Made scripts executable"
 echo -e "\n🎉 Development environment setup complete!"
 echo "Run 'source .venv/bin/activate' to activate the Python virtual environment"
 echo "Run './scripts/validate_workflow.sh' to validate your project"
-echo "Run './scripts/generate_diagrams.py' to update infrastructure diagrams"
+echo "Run './scripts/docs_generator.py' to update documentation and diagrams"

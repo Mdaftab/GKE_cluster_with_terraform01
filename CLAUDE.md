@@ -32,6 +32,21 @@ export GITHUB_REPO="your-github-username/your-repo-name"
 ./scripts/setup_gcp_auth.sh
 ```
 
+### Python Requirements
+
+The project uses Python scripts for documentation and validation. Make sure to install the required dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Required packages:
+- python-hcl2: For parsing Terraform HCL files
+- pyyaml: For parsing YAML manifests
+- graphviz: For generating diagrams
+- terraform-visual: For generating infrastructure diagrams
+- pre-commit: For running pre-commit hooks on code changes
+
 ### Terraform Operations
 
 ```bash
@@ -66,9 +81,6 @@ terraform destroy
 
 ```bash
 # Generate infrastructure diagrams and update README
-python scripts/generate_diagrams.py
-
-# Generate comprehensive documentation
 python scripts/docs_generator.py
 ```
 

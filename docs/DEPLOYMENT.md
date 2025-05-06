@@ -25,6 +25,13 @@ This guide provides detailed instructions for deploying the self-destructing GKE
    pip install -r requirements.txt
    ```
 
+   This installs:
+   - python-hcl2: For parsing Terraform configuration
+   - pyyaml: For parsing Kubernetes manifests
+   - graphviz: For generating diagrams
+   - terraform-visual: For infrastructure visualization
+   - pre-commit: For running code quality checks before commits
+
 3. **Run the bootstrap script** to install required tools
 
    ```bash
