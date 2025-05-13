@@ -76,7 +76,7 @@ variable "environment" {
   default     = "dev"
 }
 
-# Additional configuration variables for enhanced modules
+# Additional configuration variables for optional modules
 
 variable "deploy_network_policies" {
   description = "Whether to deploy Kubernetes Network Policies"
@@ -84,8 +84,9 @@ variable "deploy_network_policies" {
   default     = false
 }
 
-variable "enable_monitoring" {
-  description = "Whether to enable enhanced monitoring"
-  type        = bool
-  default     = true
-}
+# Removed monitoring variable as per simplification request
+# variable "enable_monitoring" {
+#   description = "Whether to enable enhanced monitoring"
+#   type        = bool
+#   default     = true
+# }

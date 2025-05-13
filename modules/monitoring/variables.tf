@@ -110,8 +110,8 @@ variable "enable_notifications" {
   default     = true
 }
 
-variable "notification_channels_config" {
-  description = "Configuration for notification channels"
+variable "notification_channel_configs" {
+  description = "Configuration for notification channels (sensitive data)"
   type        = map(object({
     type       = string
     labels     = map(string)

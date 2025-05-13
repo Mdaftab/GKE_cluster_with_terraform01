@@ -92,19 +92,19 @@ module "gke" {
   # Apply default node taints if needed
   node_taints                 = []
 
-  depends_on = [module.vpc, module.security]
+  # depends_on = [module.vpc, module.security] # Remove dependency on security module
 }
 
 # Optional: Deploy Network Policies if cluster has workloads
 module "network_policy" {
   source = "../../modules/network-policy"
   count  = var.deploy_network_policies ? 1 : 0
-  
+
   namespace              = "default"
   master_ipv4_cidr_block = var.master_ipv4_cidr_block
   enable_default_policies = true
   restrict_egress         = false
-  
+
   # Examples of app-specific network policies
   enabled_apps_ingress = {
     "demo-app" = {
@@ -115,25 +115,39 @@ module "network_policy" {
       }
     }
   }
-  
+
   depends_on = [module.gke]
 }
 
-# Optional: Monitoring for the GKE cluster
-module "monitoring" {
-  source = "../../modules/monitoring"
-  count  = var.enable_monitoring ? 1 : 0
-  
-  project_id   = var.project_id
-  project_name = var.project_name
-  cluster_name = module.gke.cluster_name
-  environment  = var.environment
-  
-  enable_security_metrics   = true
-  enable_alerts             = true
-  enable_notifications      = false
-  create_dashboard          = true
-  enable_log_export         = false
-  
-  depends_on = [module.gke]
-}
+# Removed Monitoring module as per simplification request
+# module "monitoring" {
+#   source = "../../modules/monitoring"
+#   count  = var.enable_monitoring ? 1 : 0
+#
+#   project_id   = var.project_id
+#   project_name = var.project_name
+#   cluster_name = module.gke.cluster_name
+#   environment  = var.environment
+#
+#   enable_security_metrics   = true
+#   enable_alerts             = true
+#   enable_notifications      = false
+#   create_dashboard          = true
+#   enable_log_export         = false
+#
+#   depends_on = [module.gke]
+# }
+
+# Removed Security module as per simplification request
+# module "security" {
+#   source = "../../modules/security"
+#
+#   project_id            = var.project_id
+#   project_name          = var.project_name
+#   service_account_id    = "${var.project_name}-gke-sa"
+#   cluster_name          = "${var.project_name}-cluster"
+#   enable_cloud_armor    = false
+#   enable_binary_authorization = false
+#   enable_secret_manager = false
+#   apply_org_policies    = false
+# }

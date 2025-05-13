@@ -41,16 +41,6 @@ module "vpc" {
     ]
   }
 
-  # Configure flow logs for the subnet if enabled
-  dynamic "subnets_flow_logs" {
-    for_each = var.enable_flow_logs ? [1] : []
-    content {
-      subnet_name          = var.subnet_name
-      aggregation_interval = "INTERVAL_5_SEC"
-      flow_sampling        = 0.5
-      metadata             = "INCLUDE_ALL_METADATA"
-    }
-  }
 }
 
 # Firewall rules for GKE internal communication

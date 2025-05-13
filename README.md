@@ -25,15 +25,10 @@ Perfect for:
 - **Spot instances** for cost efficiency (up to 91% discount)
 - **Complete modularity** for easy customization
 
-### Security
+### Security (Core Components)
 - **Private cluster** with secure networking
-- **Shielded nodes** with Secure Boot
-- **Workload Identity** for pod-level authentication
-- **Network Policy (Calico)** for pod isolation
-- **Service account** with minimal permissions
-- **NodeLocal DNSCache** for secure/improved DNS
+- **Network Policy (Calico)** for pod isolation (optional)
 - **VPC Flow Logs** for network auditing
-- **Application-layer Secrets Encryption** (optional)
 
 ### Cost Optimization
 - **e2-micro** machine type (smallest available)
@@ -117,40 +112,25 @@ terraform destroy
 
 ### Modular Structure
 
-The project is organized into the following modules:
+The project is organized into the following core modules:
 
 1. **VPC Network Module**
    - Custom VPC with private Google access
    - Subnet with secondary IP ranges
    - Firewall rules with least privilege
    - Cloud NAT for egress traffic
-   - VPC Flow Logs for security monitoring
+   - VPC Flow Logs for network monitoring
 
-2. **Security Module**
-   - Custom service account with minimal permissions
-   - Binary Authorization for image validation (optional)
-   - Cloud Armor security policies (optional)
-   - Secret Manager for sensitive configuration (optional)
-
-3. **GKE Cluster Module**
+2. **GKE Cluster Module**
    - Private cluster with private nodes
    - Spot instances for cost savings
-   - Shielded nodes with secure boot
-   - Workload Identity for pod authentication
-   - Network Policy (Calico) for pod security
-   - NodeLocal DNSCache for better DNS security
+   - Basic node configuration
 
-4. **Network Policy Module**
+3. **Network Policy Module**
    - Default deny base policy
    - Granular allow rules by namespace/label
    - DNS access for pods
    - Optional egress restrictions
-
-5. **Monitoring Module**
-   - Custom GKE dashboards
-   - Security-focused alert policies
-   - Log-based security metrics
-   - Optional log export for compliance
 
 ### Network Architecture
 
@@ -262,7 +242,7 @@ master_authorized_cidr_blocks = [
 
 ## Security Considerations
 
-This project implements a multi-layered security approach:
+This project focuses on fundamental security aspects for a basic GKE deployment:
 
 1. **Network Security**
    - Private GKE cluster with private nodes
@@ -270,21 +250,8 @@ This project implements a multi-layered security approach:
    - Firewall rules with least privilege
    - Default deny with explicit allows
 
-2. **Identity & Access**
-   - Custom service account with minimal permissions
-   - Workload Identity for pod authentication
-   - RBAC for Kubernetes authorization
-
-3. **Node Security**
-   - Shielded nodes with Secure Boot
-   - Node auto-upgrading
-   - Container-Optimized OS
-   - Optional disk encryption
-
-4. **Workload Security**
-   - Network Policy for pod isolation
-   - Optional Binary Authorization
-   - Optional Pod Security Policy
+2. **Workload Security**
+   - Network Policy for pod isolation (optional)
 
 See the [architecture document](docs/architecture.md) for more details.
 

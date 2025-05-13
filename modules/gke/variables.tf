@@ -170,3 +170,11 @@ variable "node_taints" {
   }))
   default     = []
 }
+
+# Variable for node disk size (added during previous enhancement)
+# Removed as it's not supported by the base module in this version
+# variable "node_disk_size_gb" {
+#   description = "Disk size in GB for GKE nodes"
+#   type        = number
+#   default     = 20
+# }

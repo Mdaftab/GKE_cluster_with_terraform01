@@ -165,42 +165,51 @@ resource "google_container_analysis_note" "note" {
 # Secret Manager for sensitive data (Optional, based on variable)
 # Creates secrets and grants the GKE service account access
 resource "google_secret_manager_secret" "secrets" {
-  for_each = var.enable_secret_manager ? var.secrets : {} # Conditionally create secrets based on map variable
+  # Use the non-sensitive list of secret names for for_each
+  for_each = var.enable_secret_manager ? toset(var.secret_names) : toset([])
 
-  secret_id = each.key # Use map key as secret ID
+  secret_id = each.value # Use list item as secret ID
   project   = var.project_id
 
   replication {
-    automatic = true # Automatically replicate secret data
+    # Correct syntax for automatic replication
+    auto {}
   }
 }
 
-# Add secret versions with the actual secret data
+# Add secret versions with the actual sensitive secret data
 resource "google_secret_manager_secret_version" "versions" {
-  for_each = var.enable_secret_manager ? var.secrets : {} # Conditionally create secret versions
+  # Use the non-sensitive list of secret names for for_each
+  for_each = var.enable_secret_manager ? toset(var.secret_names) : toset([])
 
-  secret      = google_secret_manager_secret.secrets[each.key].id # Reference the created secret
-  secret_data = each.value # Use map value as secret data (sensitive)
+  secret      = google_secret_manager_secret.secrets[each.value].id # Reference the created secret
+  # Access the sensitive data using the secret name as the key in the sensitive map
+  secret_data = var.secrets_data[each.value]
 }
 
 # Allow GKE service account to access secrets
 resource "google_secret_manager_secret_iam_member" "secret_access" {
-  for_each = var.enable_secret_manager ? var.secrets : {} # Conditionally grant access
+  # Use the non-sensitive list of secret names for for_each
+  for_each = var.enable_secret_manager ? toset(var.secret_names) : toset([])
 
   project   = var.project_id
-  secret_id = google_secret_manager_secret.secrets[each.key].secret_id # Reference the secret ID
+  secret_id = google_secret_manager_secret.secrets[each.value].secret_id # Reference the secret ID
   role      = "roles/secretmanager.secretAccessor" # Grant secret accessor role
   member    = "serviceAccount:${google_service_account.gke_sa.email}" # Grant to the GKE service account
 }
 
 # Org policy constraints (Optional, based on variable)
 # Example: Disable serial port access on VMs for security
-resource "google_org_policy_constraint" "constraint" {
+# Use google_project_organization_policy for project-level boolean policies
+resource "google_project_organization_policy" "disable_serial_port_access" {
   count = var.apply_org_policies ? 1 : 0 # Conditionally apply based on variable
+  # This resource is in the standard google provider, no need for explicit provider
+  # provider = google-beta
 
-  name = "compute.disableSerialPortAccess" # Name of the organization policy constraint
+  project    = var.project_id # Apply policy to the project
+  constraint = "compute.disableSerialPortAccess" # Name of the organization policy constraint
 
-  boolean_constraint {
+  boolean_policy {
     enforced = true # Enforce the constraint
   }
 }

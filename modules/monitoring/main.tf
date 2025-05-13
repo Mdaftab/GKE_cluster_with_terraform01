@@ -74,26 +74,30 @@ resource "google_monitoring_alert_policy" "alert_policies" {
 
 # Notification channels (email, SMS, Slack, etc.)
 resource "google_monitoring_notification_channel" "channels" {
-  for_each = var.enable_notifications ? var.notification_channels_config : {}
+  # Use the non-sensitive list of channel names for for_each
+  for_each = var.enable_notifications ? toset(var.notification_channels) : toset([])
 
-  display_name = each.key
-  type         = each.value.type
+  display_name = each.value # Use list item as display name
+  # Access sensitive config data using the channel name as the key
+  type         = var.notification_channel_configs[each.value].type
   project      = var.project_id
 
-  labels = each.value.labels
+  labels = var.notification_channel_configs[each.value].labels
 
   # Use dynamic block for sensitive labels based on channel type
   dynamic "sensitive_labels" {
-    for_each = each.value.type == "slack" ? [1] : []
+    # Check the type from the sensitive config map
+    for_each = var.notification_channel_configs[each.value].type == "slack" ? [1] : []
     content {
-      auth_token = each.value.auth_token
+      auth_token = var.notification_channel_configs[each.value].auth_token
     }
   }
 
   dynamic "sensitive_labels" {
-    for_each = each.value.type == "webhook_basicauth" ? [1] : []
+    # Check the type from the sensitive config map
+    for_each = var.notification_channel_configs[each.value].type == "webhook_basicauth" ? [1] : []
     content {
-      password = each.value.password
+      password = var.notification_channel_configs[each.value].password
     }
   }
 }

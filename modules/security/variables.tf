@@ -57,8 +57,14 @@ variable "enable_secret_manager" {
   default     = false
 }
 
-variable "secrets" {
-  description = "Map of secrets to store in Secret Manager"
+variable "secret_names" {
+  description = "List of secret names to create in Secret Manager"
+  type        = list(string)
+  default     = []
+}
+
+variable "secrets_data" {
+  description = "Map of secret names to their sensitive data"
   type        = map(string)
   default     = {}
   sensitive   = true

@@ -5,6 +5,7 @@
 *.tfstate
 *.tfstate.*
 .claude
+.clinerules
 
 # Lock file
 .terraform.lock.hcl
