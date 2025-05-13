@@ -1,288 +1,218 @@
-# Secure GKE Cluster with Terraform
+# GKE Cluster Deployment with Terraform
 
-A production-ready Google Kubernetes Engine (GKE) cluster deployment using Terraform best practices. This project provides a secure, modular, and cost-effective GKE infrastructure following Google Cloud's recommendations and security hardening guidelines.
+This project provides a simple and modular example of deploying a Google Kubernetes Engine (GKE) cluster using Terraform, focusing on core networking and basic security practices. It's designed as a starting point for DevOps engineers to understand how to deploy a GKE cluster using infrastructure as code.
 
 ## Overview
 
 This repository contains Terraform modules to deploy:
-- Private GKE cluster with custom VPC network
-- Comprehensive security controls
-- Cost-optimized configurations
-- Complete infrastructure as code
+- A custom VPC network with necessary subnets for GKE.
+- A private GKE cluster.
+- Basic Kubernetes Network Policies for pod isolation (optional).
 
-Perfect for:
-- Development and testing environments
-- Learning GKE best practices
-- Starting point for production workloads
-- Understanding Terraform modular design
-
-## Features
-
-### Infrastructure
-- **Private GKE cluster** with custom VPC and dedicated subnets
-- **VPC-native networking** with separate pod and service CIDRs
-- **Cloud NAT** for outbound internet access
-- **Spot instances** for cost efficiency (up to 91% discount)
-- **Complete modularity** for easy customization
-
-### Security (Core Components)
-- **Private cluster** with secure networking
-- **Network Policy (Calico)** for pod isolation (optional)
-- **VPC Flow Logs** for network auditing
-
-### Cost Optimization
-- **e2-micro** machine type (smallest available)
-- **Spot instances** for significant cost reduction
-- **Minimal node count** (1-2 nodes)
-- **Single-zone** configuration for development
-
-### Terraform Best Practices
-- **Modular design** with clean separation of concerns
-- **Remote state** with GCS backend
-- **Clear variable definitions** with documentation
-- **Logical resource organization**
-- **Feature flags** for optional capabilities
-- **Secure defaults** with override capability
+The goal is to demonstrate a clean, modular Terraform structure for deploying a GKE cluster.
 
 ## Prerequisites
 
-Before you start, you need:
+Before you begin, ensure you have the following installed:
 
-1. **Google Cloud Platform account** with billing enabled
-2. **Local tools** installed:
-   - [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
-   - [Terraform](https://developer.hashicorp.com/terraform/downloads) (v1.0+)
-   - [kubectl](https://kubernetes.io/docs/tasks/tools/)
+1.  **Google Cloud SDK:** For authenticating with GCP.
+    [Install Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
+2.  **Terraform (v1.0+):** For managing infrastructure as code.
+    [Install Terraform](https://developer.hashicorp.com/terraform/downloads)
+3.  **kubectl:** For interacting with the Kubernetes cluster.
+    [Install kubectl](https://kubernetes.io/docs/tasks/tools/)
 
-## Quick Start
+You will also need a Google Cloud Platform account with billing enabled and appropriate permissions to create VPC networks, GKE clusters, and related resources.
+
+## Deployment Steps
+
+Follow these steps to deploy the GKE cluster:
 
 ### 1. Clone the Repository
 
-```bash
-git clone https://github.com/yourusername/secure-gke-terraform.git
-cd secure-gke-terraform
-```
-
-### 2. Run the Bootstrap Script
+Start by cloning this repository to your local machine:
 
 ```bash
-chmod +x scripts/bootstrap.sh
-./scripts/bootstrap.sh
+git clone https://github.com/yourusername/gke-terraform-demo.git
+cd gke-terraform-demo
 ```
 
-This script will:
-- Verify required tools
-- Authenticate with Google Cloud
-- Enable necessary APIs
-- Create a GCS bucket for Terraform state
-- Generate backend.tf from the template
-- Generate terraform.tfvars from the template
-- Initialize Terraform
+### 2. Configure Your Environment
 
-### 3. Deploy the Infrastructure
+Navigate to the development environment directory:
 
 ```bash
 cd environments/dev
-terraform plan    # Preview changes
-terraform apply   # Deploy the infrastructure
 ```
 
-### 4. Connect to Your Cluster
+Copy the example variable and backend files:
 
 ```bash
-chmod +x ../../scripts/connect.sh
-../../scripts/connect.sh
+cp terraform.tfvars.example terraform.tfvars
+cp backend.tf.example backend.tf
 ```
 
-### 5. Test with a Sample Application
+Edit `terraform.tfvars` and replace the placeholder values with your actual GCP project ID and desired configuration:
+
+```terraform
+project_id = "YOUR_GCP_PROJECT_ID"
+project_name = "gke-demo"
+region = "us-central1"
+zone = "us-central1-a"
+subnet_cidr = "10.0.0.0/24"
+pod_cidr = "10.1.0.0/16"
+service_cidr = "10.2.0.0/16"
+master_ipv4_cidr_block = "172.16.0.0/28"
+machine_type = "e2-micro"
+min_node_count = 1
+max_node_count = 2
+initial_node_count = 1
+environment = "dev"
+
+# Set to true to deploy Network Policies
+deploy_network_policies = false
+```
+
+Edit `backend.tf` and configure your Terraform state backend. Using a remote backend like Google Cloud Storage (GCS) is highly recommended for team collaboration and state management. Replace `YOUR_GCS_BUCKET_NAME` with the name of your GCS bucket:
+
+```terraform
+terraform {
+  backend "gcs" {
+    bucket = "YOUR_GCS_BUCKET_NAME"
+    prefix = "terraform/state/gke-demo"
+  }
+}
+```
+
+If the specified GCS bucket does not exist, you will need to create it manually before running `terraform init`.
+
+### 3. Initialize Terraform
+
+Initialize Terraform in the environment directory. This downloads the necessary providers and modules:
 
 ```bash
-kubectl apply -f ../../kubernetes/manifests/deployment.yaml
-kubectl get service demo-app  # Get the external IP
+terraform init
 ```
 
-### 6. Clean Up When Finished
+If you are using the GCS backend, Terraform will initialize the backend and potentially prompt you to migrate your state if a local state file exists.
+
+### 4. Review the Deployment Plan
+
+Generate and review the execution plan. This step shows you exactly what resources Terraform will create, modify, or destroy:
+
+```bash
+terraform plan
+```
+
+Carefully examine the output to ensure the planned changes match your expectations.
+
+### 5. Apply the Configuration
+
+If the plan is satisfactory, apply the configuration to deploy the resources in your GCP project:
+
+```bash
+terraform apply
+```
+
+Type `yes` when prompted to confirm the deployment.
+
+### 6. Connect to Your Cluster
+
+Once the deployment is complete, you can connect to your GKE cluster using `kubectl`. The `environments/dev/outputs.tf` file provides a convenient command to get the cluster credentials:
+
+```bash
+terraform output get_credentials_command
+```
+
+Execute the output command in your terminal. This will configure `kubectl` to connect to your new GKE cluster.
+
+### 7. (Optional) Deploy a Sample Application
+
+You can deploy a simple application to test your cluster and network policies. Navigate back to the project root directory and apply the sample deployment manifest:
+
+```bash
+cd ../..
+kubectl apply -f kubernetes/manifests/deployment.yaml
+```
+
+Check the status of the deployed application and service:
+
+```bash
+kubectl get pods
+kubectl get service demo-app
+```
+
+If you enabled Network Policies, you might need to adjust them to allow traffic to your application.
+
+### 8. Clean Up
+
+To avoid incurring unnecessary costs, remember to destroy the deployed infrastructure when you are finished:
+
+Navigate back to the environment directory:
 
 ```bash
 cd environments/dev
+```
+
+Run the destroy command:
+
+```bash
 terraform destroy
 ```
 
-## Detailed Architecture
+Type `yes` when prompted to confirm the destruction of resources.
 
-### Modular Structure
+## Detailed Architecture (Core Components)
 
-The project is organized into the following core modules:
+```mermaid
+graph TD
+    A[GCP Project] --> B(VPC Module)
+    B --> C(VPC Network)
+    C --> D(Subnet)
+    D --> E(Primary IP Range)
+    D --> F(Secondary IP Range - Pods)
+    D --> G(Secondary IP Range - Services)
+    C --> H(Firewall Rules)
+    B --> I(Cloud NAT)
+    B --> J(VPC Flow Logs)
 
-1. **VPC Network Module**
-   - Custom VPC with private Google access
-   - Subnet with secondary IP ranges
-   - Firewall rules with least privilege
-   - Cloud NAT for egress traffic
-   - VPC Flow Logs for network monitoring
+    A --> K(GKE Module)
+    K --> L(GKE Cluster)
+    L --> M(Node Pool)
+    L --> N(Network Policy Module)
+    N --> O(Kubernetes Network Policies)
 
-2. **GKE Cluster Module**
-   - Private cluster with private nodes
-   - Spot instances for cost savings
-   - Basic node configuration
+    subgraph Infrastructure
+        C
+        D
+        E
+        F
+        G
+        H
+        I
+        J
+        L
+        M
+        O
+    end
 
-3. **Network Policy Module**
-   - Default deny base policy
-   - Granular allow rules by namespace/label
-   - DNS access for pods
-   - Optional egress restrictions
-
-### Network Architecture
-
-- **VPC Network**: Dedicated network for the cluster
-- **Primary Subnet**: 10.0.0.0/24 for GKE nodes
-- **Pod CIDR**: 10.1.0.0/16 for Kubernetes pods
-- **Service CIDR**: 10.2.0.0/16 for Kubernetes services
-- **Master CIDR**: 172.16.0.0/28 for GKE control plane
-
-For a detailed visual representation, see the [architecture diagram](docs/architecture.md).
-
-## Directory Structure
-
-```
-.
-├── environments/
-│   └── dev/                 # Development environment
-│       ├── backend.tf.example  # Template for Terraform backend
-│       ├── main.tf         # Main Terraform configuration
-│       ├── outputs.tf      # Output definitions
-│       ├── terraform.tfvars.example # Template for variables
-│       └── variables.tf    # Input variable definitions
-│
-├── kubernetes/
-│   └── manifests/          # Kubernetes manifests
-│       └── deployment.yaml # Sample application
-│
-├── modules/
-│   ├── gke/                # GKE cluster module
-│   │   ├── main.tf         # GKE resource definitions
-│   │   ├── outputs.tf      # Module outputs
-│   │   └── variables.tf    # Module variables
-│   │
-│   ├── monitoring/         # Monitoring and alerting module
-│   │   ├── main.tf         # Monitoring resources
-│   │   ├── outputs.tf      # Module outputs
-│   │   └── variables.tf    # Module variables
-│   │
-│   ├── network-policy/     # Kubernetes NetworkPolicy module
-│   │   ├── main.tf         # NetworkPolicy resources
-│   │   ├── outputs.tf      # Module outputs
-│   │   └── variables.tf    # Module variables
-│   │
-│   ├── security/           # Security module
-│   │   ├── main.tf         # Security resources
-│   │   ├── outputs.tf      # Module outputs
-│   │   └── variables.tf    # Module variables
-│   │
-│   └── vpc/                # VPC network module
-│       ├── main.tf         # VPC resource definitions
-│       ├── outputs.tf      # Module outputs
-│       └── variables.tf    # Module variables
-│
-├── scripts/
-│   ├── bootstrap.sh        # Setup script
-│   └── connect.sh          # Cluster connection script
-│
-└── docs/
-    └── architecture.md     # Architecture documentation
+    classDef default fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef module fill:#ccf,stroke:#333,stroke-width:2px;
+    class B,K,N module;
 ```
 
-## Configuration Options
+## Terraform Best Practices Demonstrated
 
-Key variables that can be customized in `terraform.tfvars`:
+This project showcases the following Terraform best practices:
 
-### Project Configuration
-- `project_id` - Your GCP project ID
-- `project_name` - Name used for resource naming
-- `region` - GCP region (default: us-central1)
-- `zone` - GCP zone (default: us-central1-a)
-
-### Network Configuration
-- `subnet_cidr` - Primary subnet CIDR (default: 10.0.0.0/24)
-- `pod_cidr` - Pod IP range (default: 10.1.0.0/16)
-- `service_cidr` - Service IP range (default: 10.2.0.0/16)
-- `master_ipv4_cidr_block` - Master IP range (default: 172.16.0.0/28)
-
-### GKE Configuration
-- `machine_type` - Node VM type (default: e2-micro)
-- `min_node_count` - Minimum nodes (default: 1)
-- `max_node_count` - Maximum nodes (default: 2)
-
-### Security Options
-- `deploy_network_policies` - Enable NetworkPolicies (default: false)
-- `enable_monitoring` - Enable enhanced monitoring (default: true)
-
-## Advanced Usage
-
-### Enabling Network Policies
-
-Set `deploy_network_policies = true` in your terraform.tfvars file to enable Kubernetes NetworkPolicies that restrict pod-to-pod communication.
-
-### Enhanced Monitoring
-
-Keep `enable_monitoring = true` (default) to deploy custom dashboards, alerts, and security metrics.
-
-### Private GKE Master
-
-For additional security, you can restrict access to the GKE API server by setting:
-```
-enable_master_authorized_networks = true
-master_authorized_cidr_blocks = [
-  {
-    cidr_block   = "192.168.1.0/24"
-    display_name = "Corporate Office"
-  }
-]
-```
-
-## Security Considerations
-
-This project focuses on fundamental security aspects for a basic GKE deployment:
-
-1. **Network Security**
-   - Private GKE cluster with private nodes
-   - VPC-native networking with separate pod/service CIDRs
-   - Firewall rules with least privilege
-   - Default deny with explicit allows
-
-2. **Workload Security**
-   - Network Policy for pod isolation (optional)
-
-See the [architecture document](docs/architecture.md) for more details.
-
-## Terraform Best Practices
-
-This project demonstrates several Terraform best practices:
-
-1. **Modular Design**
-   - Clean separation of concerns
-   - Reusable modules with well-defined interfaces
-   - Logical resource organization
-
-2. **State Management**
-   - Remote state in GCS bucket
-   - State locking for concurrent operations
-   - State versioning for recovery
-
-3. **Variable Management**
-   - Clear definitions with types
-   - Descriptive documentation
-   - Sensible defaults
-
-4. **Dynamic Configuration**
-   - Feature flags for optional components
-   - Environment-specific configurations
-   - Override capability
-
-5. **Security Hardening**
-   - Secure defaults
-   - Principle of least privilege
-   - Defense in depth
+*   **Modularity:** Infrastructure components are organized into reusable modules (VPC, GKE, Network Policy).
+*   **Input Validation:** Variables include validation rules to catch configuration errors early.
+*   **Locals:** Used for consistent naming and simplifying expressions.
+*   **Variables:** All configurable aspects are defined using variables.
+*   **Conditional Logic:** Modules and resources can be conditionally deployed using `count`.
+*   **Naming Conventions:** Consistent naming is used across resources and variables.
+*   **Documentation:** Each module has a README, and the main README provides a clear overview and steps.
+*   **Remote State:** Recommended configuration for using a GCS backend for state management.
 
 ## Contributing
 
@@ -290,4 +220,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE](LICENSE) file for details.
