@@ -3,6 +3,10 @@
 variable "project_id" {
   description = "The ID of the project where monitoring resources will be created"
   type        = string
+  validation {
+    condition     = length(var.project_id) > 0 && can(regex("^[a-z][a-z0-9-]{4,28}[a-z0-9]$", var.project_id))
+    error_message = "The project_id must be a valid GCP project ID."
+  }
 }
 
 variable "project_name" {
@@ -13,6 +17,10 @@ variable "project_name" {
 variable "cluster_name" {
   description = "Name of the GKE cluster to monitor"
   type        = string
+  validation {
+    condition     = length(var.cluster_name) > 0
+    error_message = "The cluster_name must not be empty."
+  }
 }
 
 variable "environment" {
@@ -153,6 +161,10 @@ variable "log_retention_days" {
   description = "Number of days to retain logs"
   type        = number
   default     = 30
+  validation {
+    condition     = var.log_retention_days > 0
+    error_message = "Log retention days must be a positive number."
+  }
 }
 
 variable "log_bucket_force_destroy" {

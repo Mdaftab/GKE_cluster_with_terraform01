@@ -4,6 +4,10 @@ variable "namespace" {
   description = "Kubernetes namespace to apply the network policies"
   type        = string
   default     = "default"
+  validation {
+    condition     = length(var.namespace) > 0
+    error_message = "The namespace must not be empty."
+  }
 }
 
 variable "enable_default_policies" {
@@ -21,6 +25,10 @@ variable "restrict_egress" {
 variable "master_ipv4_cidr_block" {
   description = "IP CIDR block of the GKE master"
   type        = string
+  validation {
+    condition     = can(cidrhost(var.master_ipv4_cidr_block, 0))
+    error_message = "The master_ipv4_cidr_block must be a valid CIDR block."
+  }
 }
 
 variable "enable_intra_namespace_communication" {

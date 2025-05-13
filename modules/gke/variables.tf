@@ -5,6 +5,10 @@
 variable "project_id" {
   description = "The ID of the project in which the resources belong"
   type        = string
+  validation {
+    condition     = length(var.project_id) > 0 && can(regex("^[a-z][a-z0-9-]{4,28}[a-z0-9]$", var.project_id))
+    error_message = "The project_id must be a valid GCP project ID."
+  }
 }
 
 variable "project_name" {
@@ -15,11 +19,19 @@ variable "project_name" {
 variable "region" {
   description = "The region to host the cluster in"
   type        = string
+  validation {
+    condition     = length(var.region) > 0
+    error_message = "The region must not be empty."
+  }
 }
 
 variable "zone" {
   description = "The zone to host the cluster in (required if is a zonal cluster)"
   type        = string
+  validation {
+    condition     = length(var.zone) > 0
+    error_message = "The zone must not be empty."
+  }
 }
 
 variable "network_name" {
@@ -50,16 +62,28 @@ variable "machine_type" {
 variable "min_node_count" {
   description = "Minimum number of nodes in the NodePool"
   type        = number
+  validation {
+    condition     = var.min_node_count >= 0
+    error_message = "The minimum node count must be a non-negative number."
+  }
 }
 
 variable "max_node_count" {
   description = "Maximum number of nodes in the NodePool"
   type        = number
+  validation {
+    condition     = var.max_node_count >= var.min_node_count
+    error_message = "The maximum node count must be greater than or equal to the minimum node count."
+  }
 }
 
 variable "initial_node_count" {
   description = "Initial number of nodes in the NodePool"
   type        = number
+  validation {
+    condition     = var.initial_node_count >= var.min_node_count && var.initial_node_count <= var.max_node_count
+    error_message = "The initial node count must be between the minimum and maximum node counts."
+  }
 }
 
 variable "environment" {

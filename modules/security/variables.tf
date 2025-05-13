@@ -3,6 +3,10 @@
 variable "project_id" {
   description = "The ID of the project where resources will be created"
   type        = string
+  validation {
+    condition     = length(var.project_id) > 0 && can(regex("^[a-z][a-z0-9-]{4,28}[a-z0-9]$", var.project_id))
+    error_message = "The project_id must be a valid GCP project ID."
+  }
 }
 
 variable "project_name" {
@@ -14,11 +18,19 @@ variable "service_account_id" {
   description = "ID for the GKE service account"
   type        = string
   default     = "gke-node-sa"
+  validation {
+    condition     = length(var.service_account_id) > 0
+    error_message = "The service_account_id must not be empty."
+  }
 }
 
 variable "cluster_name" {
   description = "Name of the GKE cluster"
   type        = string
+  validation {
+    condition     = length(var.cluster_name) > 0
+    error_message = "The cluster_name must not be empty."
+  }
 }
 
 variable "enable_cloud_armor" {
