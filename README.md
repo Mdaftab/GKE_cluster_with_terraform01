@@ -37,7 +37,29 @@ git clone https://github.com/yourusername/gke-terraform-demo.git
 cd gke-terraform-demo
 ```
 
-### 2. Configure Your Environment
+### 2. Run the Bootstrap Script
+
+The `scripts/bootstrap.sh` script automates several initial setup steps:
+
+- Checks for required tools (gcloud, terraform, kubectl).
+- Authenticates with Google Cloud.
+- Prompts for and sets the GCP Project ID if not already configured.
+- Enables necessary GCP APIs.
+- Creates a GCS bucket for Terraform state (if one doesn't exist).
+- Copies `terraform.tfvars.example` to `terraform.tfvars` and replaces placeholders with your Project ID.
+- Copies `backend.tf.example` to `backend.tf` and replaces the placeholder with your GCS bucket name.
+- Runs `terraform init` to initialize the Terraform working directory.
+
+Run the bootstrap script:
+
+```bash
+chmod +x scripts/bootstrap.sh
+./scripts/bootstrap.sh
+```
+
+Follow the prompts in the script to configure your GCP project and Terraform backend.
+
+### 3. Review and Customize Configuration
 
 Navigate to the development environment directory:
 
@@ -45,17 +67,10 @@ Navigate to the development environment directory:
 cd environments/dev
 ```
 
-Copy the example variable and backend files:
-
-```bash
-cp terraform.tfvars.example terraform.tfvars
-cp backend.tf.example backend.tf
-```
-
-Edit `terraform.tfvars` and replace the placeholder values with your actual GCP project ID and desired configuration:
+Review and customize the `terraform.tfvars` file. This file contains all the configurable aspects of your GKE cluster and network:
 
 ```terraform
-project_id = "YOUR_GCP_PROJECT_ID"
+project_id = "YOUR_GCP_PROJECT_ID" # Ensure this is set correctly by the bootstrap script or update manually
 project_name = "gke-demo"
 region = "us-central1"
 zone = "us-central1-a"
@@ -69,42 +84,21 @@ max_node_count = 2
 initial_node_count = 1
 environment = "dev"
 
-# Set to true to deploy Network Policies
+# Set to true to deploy Kubernetes Network Policies for pod isolation
 deploy_network_policies = false
 ```
 
-Edit `backend.tf` and configure your Terraform state backend. Using a remote backend like Google Cloud Storage (GCS) is highly recommended for team collaboration and state management. Replace `YOUR_GCS_BUCKET_NAME` with the name of your GCS bucket:
-
-```terraform
-terraform {
-  backend "gcs" {
-    bucket = "YOUR_GCS_BUCKET_NAME"
-    prefix = "terraform/state/gke-demo"
-  }
-}
-```
-
-If the specified GCS bucket does not exist, you will need to create it manually before running `terraform init`.
-
-### 3. Initialize Terraform
-
-Initialize Terraform in the environment directory. This downloads the necessary providers and modules:
-
-```bash
-terraform init
-```
-
-If you are using the GCS backend, Terraform will initialize the backend and potentially prompt you to migrate your state if a local state file exists.
+You can adjust variables like `region`, `zone`, `machine_type`, and node counts based on your needs. Set `deploy_network_policies` to `true` if you want to include basic Network Policies.
 
 ### 4. Review the Deployment Plan
 
-Generate and review the execution plan. This step shows you exactly what resources Terraform will create, modify, or destroy:
+Generate and review the execution plan. This step shows you exactly what resources Terraform will create, modify, or destroy based on your configuration:
 
 ```bash
 terraform plan
 ```
 
-Carefully examine the output to ensure the planned changes match your expectations.
+Carefully examine the output to ensure the planned changes match your expectations before proceeding.
 
 ### 5. Apply the Configuration
 
@@ -118,20 +112,21 @@ Type `yes` when prompted to confirm the deployment.
 
 ### 6. Connect to Your Cluster
 
-Once the deployment is complete, you can connect to your GKE cluster using `kubectl`. The `environments/dev/outputs.tf` file provides a convenient command to get the cluster credentials:
+Once the deployment is complete, you can connect to your GKE cluster using `kubectl`. The `scripts/connect.sh` script automates retrieving the cluster credentials and configuring `kubectl`:
 
 ```bash
-terraform output get_credentials_command
+cd ../.. # Navigate back to the project root
+chmod +x scripts/connect.sh
+./scripts/connect.sh
 ```
 
-Execute the output command in your terminal. This will configure `kubectl` to connect to your new GKE cluster.
+This script will use the Terraform outputs to get the cluster name, region, and project ID, then configure your local `kubectl` context. It will also verify the connection and list the cluster nodes.
 
 ### 7. (Optional) Deploy a Sample Application
 
-You can deploy a simple application to test your cluster and network policies. Navigate back to the project root directory and apply the sample deployment manifest:
+You can deploy a simple application to test your cluster and network policies. From the project root directory, apply the sample deployment manifest:
 
 ```bash
-cd ../..
 kubectl apply -f kubernetes/manifests/deployment.yaml
 ```
 
@@ -196,7 +191,7 @@ graph TD
         O
     end
 
-    classDef default fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef default fill:#a2e0ff,stroke:#333,stroke-width:2px;
     classDef module fill:#ccf,stroke:#333,stroke-width:2px;
     class B,K,N module;
 ```
